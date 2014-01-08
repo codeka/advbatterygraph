@@ -42,7 +42,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             mComponentName = new ComponentName(context, BatteryGraphWidgetProvider.class);
 
             if (intent.getAction().equals(CUSTOM_REFRESH_ACTION)) {
-                refreshGraph(BatteryStatus.getHistory(context, 48), 48 * 60);
+                refreshGraph(context, BatteryStatus.getHistory(context, 48), 48 * 60);
             } else {
                 super.onReceive(context, intent);
             }
@@ -59,7 +59,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         mSettings.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
         mSettings.save(context);
 
-        refreshGraph(BatteryStatus.getHistory(context, 48), 48 * 60);
+        refreshGraph(context, BatteryStatus.getHistory(context, 48), 48 * 60);
     }
 
     @Override
@@ -72,10 +72,15 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingIntent);
 
-        refreshGraph(BatteryStatus.getHistory(context, 48), 48 * 60);
+        intent = new Intent(context, SettingsActivity.class);
+        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+        pendingIntent = PendingIntent.getActivity(context, 0 , intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        mRemoteViews.setOnClickPendingIntent(R.id.image, pendingIntent);
+
+        refreshGraph(context, BatteryStatus.getHistory(context, 48), 48 * 60);
     }
 
-    private void refreshGraph(List<BatteryStatus> history, int numMinutes) {
+    private void refreshGraph(Context context, List<BatteryStatus> history, int numMinutes) {
         Bitmap bmp = renderGraph(history, numMinutes);
         mRemoteViews.setImageViewBitmap(R.id.image, bmp);
     }
@@ -101,6 +106,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         path.lineTo(0, height);
         path.lineTo(width, height);
         Paint paint = new Paint();
+        paint.setAntiAlias(true);
         paint.setARGB(128, 0, 0, 0);
         paint.setStyle(Style.FILL);
         canvas.drawPath(path, paint);
@@ -136,6 +142,13 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
         paint.setColor(colour);
         canvas.drawPath(path, paint);
+
+        String text = String.format("%d%%", (int) (history.get(0).getChargePercent() * 100.0f));
+        paint.setTextSize(30.0f);
+        paint.setColor(Color.WHITE);
+        paint.setStrokeWidth(mPixelDensity);
+        float textWidth = paint.measureText(text);
+        canvas.drawText(text, width - textWidth - 4, height - 4, paint);
 
         return bmp;
     }

@@ -1,0 +1,12 @@
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <au.com.codeka.advbatterygraph.NotificationSettingDialog
+        android:key="new_notification"
+        android:title="Add Notification"
+        android:dialogLayout="@layout/notification_pref"
+        android:positiveButtonText="Add"
+        android:negativeButtonText="Cancel"
+    />
+
+</PreferenceScreen>

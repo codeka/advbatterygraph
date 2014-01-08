@@ -1,0 +1,15 @@
+<PreferenceScreen
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <PreferenceCategory android:title="Graph Size">
+        <EditTextPreference
+                android:key="GraphWidth"
+                android:title="Width"
+                android:summary="Width of the graph" />
+        <EditTextPreference
+                android:key="GraphHeight"
+                android:title="Height"
+                android:summary="Height of the graph" />
+    </PreferenceCategory>
+
+</PreferenceScreen>
