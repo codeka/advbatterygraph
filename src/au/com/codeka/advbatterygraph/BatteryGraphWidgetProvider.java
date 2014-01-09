@@ -146,6 +146,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         String text = String.format("%d%%", (int) (history.get(0).getChargePercent() * 100.0f));
         paint.setTextSize(30.0f);
         paint.setColor(Color.WHITE);
+        paint.setStyle(Style.FILL);
         paint.setStrokeWidth(mPixelDensity);
         float textWidth = paint.measureText(text);
         canvas.drawText(text, width - textWidth - 4, height - 4, paint);
