@@ -155,6 +155,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
 
     List<PointF> renderGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+        height -= 4;
         ArrayList<PointF> points = new ArrayList<PointF>();
         if (history.size() == 0) {
             points.add(new PointF(width, height));
@@ -169,7 +170,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         cal.setTime(new Date());
 
         BatteryStatus status = history.get(0);
-        points.add(new PointF(x, height - (height * status.getChargeFraction())));
+        points.add(new PointF(x, 2 + height - (height * status.getChargeFraction())));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
             cal.add(Calendar.MINUTE, -1);
@@ -179,7 +180,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 j++;
             }
             status = history.get(j);
-            points.add(new PointF(x, height - (height * status.getChargeFraction())));
+            points.add(new PointF(x, 2 + height - (height * status.getChargeFraction())));
         }
 
         return points;
