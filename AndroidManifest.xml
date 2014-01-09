@@ -17,6 +17,7 @@
         <activity android:name=".SettingsActivity">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="au.com.codeka.advbatterygraph.UpdateAction" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>

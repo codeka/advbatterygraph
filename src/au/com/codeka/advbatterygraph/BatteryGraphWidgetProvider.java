@@ -31,7 +31,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     private float mPixelDensity;
     private Settings mSettings;
 
-    private static final String CUSTOM_REFRESH_ACTION = "au.com.codeka.advbatterygraph.UpdateAction";
+    public static final String CUSTOM_REFRESH_ACTION = "au.com.codeka.advbatterygraph.UpdateAction";
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -143,7 +143,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         paint.setColor(colour);
         canvas.drawPath(path, paint);
 
-        String text = String.format("%d%%", (int) (history.get(0).getChargePercent() * 100.0f));
+        String text = String.format("%d%%", (int) (history.get(0).getChargeFraction() * 100.0f));
         paint.setTextSize(30.0f);
         paint.setColor(Color.WHITE);
         paint.setStyle(Style.FILL);
@@ -169,7 +169,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         cal.setTime(new Date());
 
         BatteryStatus status = history.get(0);
-        points.add(new PointF(x, height - (height * status.getChargePercent())));
+        points.add(new PointF(x, height - (height * status.getChargeFraction())));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
             cal.add(Calendar.MINUTE, -1);
@@ -179,7 +179,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 j++;
             }
             status = history.get(j);
-            points.add(new PointF(x, height - (height * status.getChargePercent())));
+            points.add(new PointF(x, height - (height * status.getChargeFraction())));
         }
 
         return points;

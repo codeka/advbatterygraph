@@ -13,61 +13,61 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 /** The class manages and maintains the historical battery state. */
 public class BatteryStatus {
-	private Date mDate;
-	private float mChargePercent;
+    private Date mDate;
+    private float mChargeFraction;
 
-	private BatteryStatus() {
-	}
+    private BatteryStatus() {
+    }
 
-	public float getChargePercent() {
-		return mChargePercent;
-	}
-	public Date getDate() {
-		return mDate;
-	}
+    public float getChargeFraction() {
+        return mChargeFraction;
+    }
+    public Date getDate() {
+        return mDate;
+    }
 
-	public static void save(Context context, BatteryStatus status) {
-		new Store(context).save(status);
-	}
+    public static void save(Context context, BatteryStatus status) {
+        new Store(context).save(status);
+    }
 
-	/**
-	 * Returns the last {@see numHours} worth of battery status.
-	 * 
-	 * @param numHours The number of hours of data to return.
-	 */
-	public static List<BatteryStatus> getHistory(Context context, int numHours) {
-		Calendar cal = Calendar.getInstance();
-		cal.setTime(new Date());
-		cal.add(Calendar.HOUR_OF_DAY, -numHours);
-		Date dt = cal.getTime();
+    /**
+     * Returns the last {@see numHours} worth of battery status.
+     * 
+     * @param numHours The number of hours of data to return.
+     */
+    public static List<BatteryStatus> getHistory(Context context, int numHours) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+        cal.add(Calendar.HOUR_OF_DAY, -numHours);
+        Date dt = cal.getTime();
 
-		return new Store(context).getHistory(dt.getTime());
-	}
+        return new Store(context).getHistory(dt.getTime());
+    }
 
-	public static class Builder {
-		private Date mDate;
-		private float mChargePercent;
+    public static class Builder {
+        private Date mDate;
+        private float mChargeFraction;
 
-		public Builder() {
-		}
+        public Builder() {
+        }
 
-		public Builder chargePercent(float percent) {
-			mChargePercent = percent;
-			return this;
-		}
+        public Builder chargeFraction(float percent) {
+            mChargeFraction = percent;
+            return this;
+        }
 
-		public Builder timestamp(long timestamp) {
-			mDate = new Date(timestamp);
-			return this;
-		}
+        public Builder timestamp(long timestamp) {
+            mDate = new Date(timestamp);
+            return this;
+        }
 
-		public BatteryStatus build() {
-			BatteryStatus status = new BatteryStatus();
-			status.mDate = mDate == null ? new Date() : mDate;
-			status.mChargePercent = mChargePercent;
-			return status;
-		}
-	}
+        public BatteryStatus build() {
+            BatteryStatus status = new BatteryStatus();
+            status.mDate = mDate == null ? new Date() : mDate;
+            status.mChargeFraction = mChargeFraction;
+            return status;
+        }
+    }
 
     private static class Store extends SQLiteOpenHelper {
         private static Object sLock = new Object();
@@ -99,7 +99,7 @@ public class BatteryStatus {
                     // insert a new cached value
                     ContentValues values = new ContentValues();
                     values.put("timestamp", status.mDate.getTime());
-                    values.put("charge_percent", status.mChargePercent);
+                    values.put("charge_percent", status.mChargeFraction);
                     db.insert("battery_history", null, values);
                 } catch(Exception e) {
                     // ignore errors... todo: log them
@@ -119,10 +119,10 @@ public class BatteryStatus {
 
                 ArrayList<BatteryStatus> statuses = new ArrayList<BatteryStatus>();
                 while (cursor.moveToNext()) {
-                	statuses.add(new BatteryStatus.Builder()
-                					.timestamp(cursor.getLong(0))
-                					.chargePercent(cursor.getFloat(1))
-                					.build());
+                    statuses.add(new BatteryStatus.Builder()
+                                    .timestamp(cursor.getLong(0))
+                                    .chargeFraction(cursor.getFloat(1))
+                                    .build());
                 }
 
                 return statuses;

@@ -4,17 +4,22 @@ import java.util.Date;
 import java.util.List;
 
 import android.app.NotificationManager;
+import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.media.RingtoneManager;
 import android.os.BatteryManager;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
 
 public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
+    private static int sLastPercent;
+
     /** This is called by the system when an alarm is received. */
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -23,25 +28,42 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
 
         int level = batteryStatus.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
         int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
-        float percent = (float) level / scale;
+        float fraction = (float) level / scale;
+        int percent = (int) (fraction * 100.0f);
 
         BatteryStatus status = new BatteryStatus.Builder()
-                                                .chargePercent(percent)
+                                                .chargeFraction(fraction)
                                                 .build();
         BatteryStatus.save(context, status);
 
+        // if the percent has actually changed from last time, tell the widget to update
+        if (sLastPercent == 0 || sLastPercent != percent) {
+            Intent i = new Intent(context, BatteryGraphWidgetProvider.class);
+            i.setAction(BatteryGraphWidgetProvider.CUSTOM_REFRESH_ACTION);
+            context.sendBroadcast(i);
+        }
+
+        // if we have to display a notification, do it now
         int extraStatus = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, 0);
-        boolean isCharging = ((extraStatus & BatteryManager.BATTERY_STATUS_FULL) != 0 ||
-                              (extraStatus & BatteryManager.BATTERY_STATUS_CHARGING) != 0);
-        handleNotifications(context, percent, isCharging);
+        handleNotifications(context, percent);
+
+        // percent the last percent
+        sLastPercent = percent;
     }
 
-    private void handleNotifications(Context context, float percent, boolean isCharging) {
+    private void handleNotifications(Context context, int percent) {
+        // prefer to use this cached one, than fetching it from the DB every time...
+        int lastPercent = sLastPercent;
+        if (lastPercent == 0) {
+            List<BatteryStatus> history = BatteryStatus.getHistory(context, 1);
+            lastPercent = (int) (history.get(1).getChargeFraction() * 100.0f);
+        }
+        if (lastPercent == percent) {
+            // if we haven't clicked over a percent, nothing to do.
+            return;
+        }
+
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-
-        // TODO: this is horribly inefficient!
-        List<BatteryStatus> history = BatteryStatus.getHistory(context, 1);
-
         for (int i = 1; ; i++) {
             String key = String.format("notification:%d:percent", i);
             if (prefs.getInt(key, -1) < 0) {
@@ -52,46 +74,42 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
             String notifyDirection = prefs.getString(String.format("notification:%d:direction", i), "");
             boolean notifyCharging = notifyDirection.toLowerCase().equals("charging");
 
-            if (needNotification(notifyPercent, notifyCharging,
-                    history.get(1).getChargePercent(), history.get(0).getChargePercent(), isCharging)) {
-                displayNotification(context, notifyPercent, isCharging);
+            if (needNotification((int) notifyPercent, notifyCharging, lastPercent, percent)) {
+                displayNotification(context, notifyPercent, notifyCharging);
             }
         }
     }
 
-    private boolean needNotification(float notifyPercent, boolean notifyCharging,
-            float lastPercent, float currPercent, boolean currCharging) {
-        if (notifyCharging != currCharging) {
+    private boolean needNotification(int notifyPercent, boolean notifyCharging,
+            int lastPercent, int currPercent) {
+        if (lastPercent == currPercent) {
             return false;
         }
 
         if (notifyCharging) {
             return (lastPercent < notifyPercent && currPercent >= notifyPercent);
         } else {
-            return (lastPercent >= notifyPercent && currPercent < notifyPercent);
+            return (lastPercent > notifyPercent && currPercent <= notifyPercent);
         }
     }
 
-    private void displayNotification(Context context, float notifyPercent, boolean isCharging) {
+    private void displayNotification(Context context, int notifyPercent, boolean notifyCharging) {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(context);
         builder.setSmallIcon(R.drawable.ic_launcher); // TODO: better icon
         builder.setAutoCancel(true);
 
-        NotificationCompat.InboxStyle inboxStyle = new NotificationCompat.InboxStyle();
-
-        String title = String.format("Battery at %d%% and %s", (int) notifyPercent,
-                isCharging ?  "charging" : "discharging");
+        String title = String.format("Battery at %d%% and %s", notifyPercent,
+                notifyCharging ?  "charging" : "discharging");
 
         builder.setLargeIcon(BitmapFactory.decodeResource(context.getResources(), R.drawable.ic_launcher)); // TODO: better icon
         builder.setContentTitle(title);
         builder.setWhen(new Date().getTime());
 
-        inboxStyle.setBigContentTitle(title);
-        builder.setStyle(inboxStyle);
-//        builder.setLights(options.getLedColour(), 1000, 5000);
+        // TODO: allow these to be configured
+        builder.setLights(Color.WHITE, 1000, 5000);
+        builder.setSound(RingtoneManager.getActualDefaultRingtoneUri(context, RingtoneManager.TYPE_NOTIFICATION));
 
         NotificationManager nm = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
         nm.notify(1, builder.build());
-
     }
 }
