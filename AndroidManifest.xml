@@ -1,35 +1,37 @@
+<?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="au.com.codeka.advbatterygraph"
           android:versionCode="4"
           android:versionName="0.2.1" >
+  <uses-sdk android:minSdkVersion="16"
+            android:targetSdkVersion="18" />
 
-    <uses-sdk android:minSdkVersion="16"
-              android:targetSdkVersion="18" />
+  <!-- required because we use an alarm to query the battery state. -->
+  <uses-permission android:name="android.permission.WAKE_LOCK" />
 
-    <!-- required because we use an alarm to query the battery state. -->
-	<uses-permission android:name="android.permission.WAKE_LOCK"></uses-permission>
+  <application android:allowBackup="true"
+               android:icon="@drawable/ic_launcher"
+               android:label="@string/app_name"
+               android:theme="@style/AppTheme" >
 
-    <application android:allowBackup="true"
-                 android:icon="@drawable/ic_launcher"
-                 android:label="@string/app_name"
-                 android:theme="@style/AppTheme" >
+    <activity android:name=".SettingsActivity">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+        <action android:name="au.com.codeka.advbatterygraph.UpdateAction" />
+        <category android:name="android.intent.category.LAUNCHER" />
+      </intent-filter>
+    </activity>
 
-        <activity android:name=".SettingsActivity">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="au.com.codeka.advbatterygraph.UpdateAction" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
-        </activity>
+    <receiver android:process=":remote"
+              android:name=".BatteryGraphAlarmReceiver" />
 
-        <receiver android:process=":remote" android:name=".BatteryGraphAlarmReceiver" />
-
-        <receiver android:name=".BatteryGraphWidgetProvider" android:label="@string/app_name">
-            <intent-filter>
-                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-            </intent-filter>
-            <meta-data android:name="android.appwidget.provider" android:resource="@xml/battery_graph_widget_provider" />
-        </receiver>
-    </application>
-
+    <receiver android:name=".BatteryGraphWidgetProvider"
+              android:label="@string/app_name">
+      <intent-filter>
+        <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+      </intent-filter>
+      <meta-data android:name="android.appwidget.provider"
+                 android:resource="@xml/battery_graph_widget_provider" />
+    </receiver>
+  </application>
 </manifest>
