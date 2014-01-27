@@ -42,6 +42,10 @@ public class EditTextIntegerPreference extends EditTextPreference {
         return mInteger != null ? mInteger.toString() : null;
     }
 
+    public Integer getInteger() {
+        return mInteger;
+    }
+
     @Override
     protected String getPersistedString(String defaultReturnValue) {
         return String.valueOf(getPersistedInt(-1));

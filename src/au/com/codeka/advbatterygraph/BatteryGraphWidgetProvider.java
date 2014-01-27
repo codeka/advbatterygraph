@@ -23,6 +23,9 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
 
+/**
+ * This is the widget provider which renders the actual widget.
+ */
 public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     private RemoteViews mRemoteViews;
     private ComponentName mComponentName;
@@ -32,6 +35,21 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     public static final String CUSTOM_REFRESH_ACTION = "au.com.codeka.advbatterygraph.UpdateAction";
 
+    /**
+     * You can call this to send a notification to the graph widget to update
+     * itself.
+     */
+    public static void notifyRefresh(Context context) {
+        Intent i = new Intent(context, BatteryGraphWidgetProvider.class);
+        i.setAction(BatteryGraphWidgetProvider.CUSTOM_REFRESH_ACTION);
+        context.sendBroadcast(i);
+
+    }
+
+    /**
+     * Called when we receive a notification, either from the widget subsystem
+     * directly, or from our customer refresh code.
+     */
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
@@ -41,7 +59,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             mComponentName = new ComponentName(context, BatteryGraphWidgetProvider.class);
 
             if (intent.getAction().equals(CUSTOM_REFRESH_ACTION)) {
-                refreshGraph(context, BatteryStatus.getHistory(context, 48), 48 * 60);
+                refreshGraph(context);
             } else {
                 super.onReceive(context, intent);
             }
@@ -52,15 +70,27 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
     }
 
+    /**
+     * This is called when the "options" of the widget change. In particular, we're
+     * interested in when the dimensions change.
+     *
+     * Unfortunately, the "width" and "height" we receive can, in reality, be
+     * incredibly inaccurate, we need to provide a setting that the user can
+     * override :\
+     */
     @Override
     public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
         mSettings.setGraphWidth(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH));
         mSettings.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
         mSettings.save(context);
 
-        refreshGraph(context, BatteryStatus.getHistory(context, 48), 48 * 60);
+        refreshGraph(context);
     }
 
+    /**
+     * This is called when the widget is updated (usually when it starts up, but
+     * also gets called ~every 30 minutes.
+     */
     @Override
     public void onUpdate(Context context, AppWidgetManager mgr, int[] appWidgetIds) {
         super.onUpdate(context, mgr, appWidgetIds);
@@ -76,10 +106,13 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         pendingIntent = PendingIntent.getActivity(context, 0 , intent, PendingIntent.FLAG_UPDATE_CURRENT);
         mRemoteViews.setOnClickPendingIntent(R.id.image, pendingIntent);
 
-        refreshGraph(context, BatteryStatus.getHistory(context, 48), 48 * 60);
+        refreshGraph(context);
     }
 
-    private void refreshGraph(Context context, List<BatteryStatus> history, int numMinutes) {
+    private void refreshGraph(Context context) {
+        Log.i("BatteryGraph", "Num Hours: "+mSettings.getNumHours());
+        List<BatteryStatus> history = BatteryStatus.getHistory(context, mSettings.getNumHours());
+        int numMinutes = mSettings.getNumHours() * 60;
         Bitmap bmp = renderGraph(history, numMinutes);
         mRemoteViews.setImageViewBitmap(R.id.image, bmp);
     }

@@ -13,5 +13,9 @@
         android:inputType="number"
         android:title="Height"
         android:summary="Height of the graph" />
+    <ListPreference android:key="au.com.codeka.advbatterygraph.NumHours"
+                    android:title="History Length"
+                    android:entries="@array/history_length_display"
+                    android:entryValues="@array/history_length_values" />
   </PreferenceCategory>
 </PreferenceScreen>

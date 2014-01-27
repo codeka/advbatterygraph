@@ -1,12 +1,14 @@
 package au.com.codeka.advbatterygraph;
 
 import java.util.List;
+import java.util.Locale;
 
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -22,6 +24,8 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+
+        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
     }
 
     @Override
@@ -34,28 +38,68 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
      */
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        Intent i = new Intent(this, BatteryGraphWidgetProvider.class);
-        i.setAction(BatteryGraphWidgetProvider.CUSTOM_REFRESH_ACTION);
-        sendBroadcast(i);
+        BatteryGraphWidgetProvider.notifyRefresh(this);
     }
 
-    public static class GraphSettingsFragment extends PreferenceFragment {
+    /**
+     * Base class for our various preference fragments.
+     */
+    public static abstract class BasePreferenceFragment extends PreferenceFragment
+            implements SharedPreferences.OnSharedPreferenceChangeListener {
+        @Override
+        public void onStart() {
+            super.onStart();
+            refreshSummaries();
+            getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+        }
+
+        @Override
+        public void onStop() {
+            super.onStop();
+            getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+        }
+
+        @Override
+        public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            refreshSummaries();
+        }
+
+        protected abstract void refreshSummaries();
+    }
+
+    public static class GraphSettingsFragment extends BasePreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.graph_settings);
         }
+
+        @Override
+        protected void refreshSummaries() {
+            EditTextIntegerPreference intpref = (EditTextIntegerPreference) findPreference(Settings.PREF_PREFIX+"GraphWidth");
+            intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
+
+            intpref = (EditTextIntegerPreference) findPreference(Settings.PREF_PREFIX+"GraphHeight");
+            intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
+
+            ListPreference listpref = (ListPreference) findPreference(Settings.PREF_PREFIX+"NumHours");
+            listpref.setSummary(listpref.getEntry());
+        }
     }
 
-    public static class TempSettingsFragment extends PreferenceFragment {
+    public static class TempSettingsFragment extends BasePreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.temp_settings);
         }
+
+        @Override
+        protected void refreshSummaries() {
+        }
     }
 
-    public static class NotificationSettingsFragment extends PreferenceFragment
+    public static class NotificationSettingsFragment extends BasePreferenceFragment
                                                      implements SharedPreferences.OnSharedPreferenceChangeListener {
 
         @Override
@@ -63,8 +107,6 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.notification_settings);
             refreshNotificationPrefs();
-
-            getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
         }
 
         @Override
@@ -85,13 +127,13 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
 
         @Override
         public boolean onContextItemSelected(MenuItem item) {
+            int position = ((AdapterView.AdapterContextMenuInfo) item.getMenuInfo()).position;
             switch (item.getItemId()) {
                 case R.id.delete:
-                    int position = ((AdapterView.AdapterContextMenuInfo) item.getMenuInfo()).position;
                     deleteNotificationSetting(position + 1);
                     break;
                 case R.id.edit:
-                    // TODO
+                    //showNotificationSetting(position + 1);
                     break;
             }
 
@@ -100,9 +142,15 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
 
         @Override
         public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+            super.onSharedPreferenceChanged(sharedPreferences, key);
+
             if (key.startsWith("notification:")) {
                 refreshNotificationPrefs();
             }
+        }
+
+        @Override
+        protected void refreshSummaries() {
         }
 
         /**

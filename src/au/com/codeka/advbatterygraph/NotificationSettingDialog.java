@@ -4,6 +4,7 @@ import java.util.Locale;
 import java.util.Map;
 
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.preference.DialogPreference;
 import android.util.AttributeSet;
 import android.view.View;
@@ -56,7 +57,16 @@ public class NotificationSettingDialog extends DialogPreference {
         mDirectionSpinner.setAdapter(adapter);
 
         if (!getKey().equals("notification:new")) {
-            // populate the value...
+            SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+            int percent = prefs.getInt(getKey()+":percent", 0);
+            String direction = prefs.getString(getKey()+":direction", "");
+
+            mPercentBar.setProgress(percent / 5);
+            for (int i = 0; i < adapter.getCount(); i++) {
+                if (adapter.getItem(i).equals(direction)) {
+                    mDirectionSpinner.setSelection(i);
+                }
+            }
         }
     }
 

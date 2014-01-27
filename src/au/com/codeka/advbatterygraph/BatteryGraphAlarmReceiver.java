@@ -40,9 +40,7 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
 
         // if the percent has actually changed from last time, tell the widget to update
         if (sLastPercent == 0 || sLastPercent != percent) {
-            Intent i = new Intent(context, BatteryGraphWidgetProvider.class);
-            i.setAction(BatteryGraphWidgetProvider.CUSTOM_REFRESH_ACTION);
-            context.sendBroadcast(i);
+            BatteryGraphWidgetProvider.notifyRefresh(context);
         }
 
         // if we have to display a notification, do it now
