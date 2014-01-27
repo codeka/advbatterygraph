@@ -129,7 +129,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         int graphHeight = height;
         if (mSettings.showTimeScale()) {
-            graphHeight -= 20 * mPixelDensity;
+            graphHeight -= 26;
         }
 
         int numGraphsShowing = 1;
@@ -183,7 +183,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         Paint fgPaint = new Paint();
         fgPaint.setAntiAlias(true);
-        fgPaint.setTextSize(18.0f * mPixelDensity);
+        fgPaint.setTextSize(22.0f);
         fgPaint.setColor(Color.WHITE);
         fgPaint.setStyle(Style.FILL);
         fgPaint.setStrokeWidth(mPixelDensity);
@@ -223,7 +223,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 float textWidth = fgPaint.measureText(text);
                 canvas.drawText(text, x - (textWidth / 2), height - 4, fgPaint);
                 if (drawLines) {
-                    canvas.drawLine(x, 0, x, height - 20.0f * mPixelDensity, fgPaint);
+                    canvas.drawLine(x, 0, x, height - 26.0f, fgPaint);
                 }
             }
         }
