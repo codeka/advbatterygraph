@@ -9,6 +9,8 @@ public class Settings {
     private int mGraphHeight;
     private boolean mShowTempGraph;
     private int mNumHours;
+    private boolean mShowTimeScale;
+    private boolean mShowTimeLines;
 
     public static final String PREF_PREFIX = "au.com.codeka.advbatterygraph.";
 
@@ -33,6 +35,12 @@ public class Settings {
     public int getNumHours() {
         return mNumHours;
     }
+    public boolean showTimeScale() {
+        return mShowTimeScale;
+    }
+    public boolean showTimeLines() {
+        return mShowTimeLines;
+    }
 
     public static Settings get(Context context) {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
@@ -42,6 +50,8 @@ public class Settings {
         s.mGraphHeight = pref.getInt(PREF_PREFIX+"GraphHeight", 40);
         s.mShowTempGraph = pref.getBoolean(PREF_PREFIX+"IncludeTemp", false);
         s.mNumHours = Integer.parseInt(pref.getString(PREF_PREFIX+"NumHours", Integer.toString(48)));
+        s.mShowTimeScale = pref.getBoolean(PREF_PREFIX+"ShowTime", false);
+        s.mShowTimeLines = pref.getBoolean(PREF_PREFIX+"ShowTimeLines", false);
         return s;
     }
 

@@ -18,4 +18,11 @@
                     android:entries="@array/history_length_display"
                     android:entryValues="@array/history_length_values" />
   </PreferenceCategory>
+  <PreferenceCategory android:title="Appearance">
+    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.ShowTime"
+                        android:title="Show time indicators" />
+    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.ShowTimeLines"
+                        android:title="Include time markers"
+                        android:dependency="au.com.codeka.advbatterygraph.ShowTime" />
+  </PreferenceCategory>
 </PreferenceScreen>

@@ -19,6 +19,7 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -110,7 +111,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
 
     private void refreshGraph(Context context) {
-        Log.i("BatteryGraph", "Num Hours: "+mSettings.getNumHours());
         List<BatteryStatus> history = BatteryStatus.getHistory(context, mSettings.getNumHours());
         int numMinutes = mSettings.getNumHours() * 60;
         Bitmap bmp = renderGraph(history, numMinutes);
@@ -127,22 +127,33 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         Bitmap bmp = Bitmap.createBitmap(width, height, Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
 
+        int graphHeight = height;
+        if (mSettings.showTimeScale()) {
+            graphHeight -= 20 * mPixelDensity;
+        }
+
+        int numGraphsShowing = 1;
         List<GraphPoint> tempPoints = null;
-        List<GraphPoint> chargePoints = renderChargeGraph(history, numMinutes, width, height);
+        List<GraphPoint> chargePoints = renderChargeGraph(history, numMinutes, width, graphHeight);
 
         if (mSettings.showTemperatureGraph()) {
-            tempPoints = renderTempGraph(history, numMinutes, width, height);
+            numGraphsShowing ++;
+            tempPoints = renderTempGraph(history, numMinutes, width, graphHeight);
+        }
+
+        if (mSettings.showTimeScale()) {
+            showTimeScale(canvas, width, height, numMinutes, numGraphsShowing, mSettings.showTimeLines());
         }
 
         if (tempPoints != null) {
-            drawGraphBackground(tempPoints, canvas, width, height);
+            drawGraphBackground(tempPoints, canvas, width, graphHeight);
         }
-        drawGraphBackground(chargePoints, canvas, width, height);
+        drawGraphBackground(chargePoints, canvas, width, graphHeight);
 
         if (tempPoints != null) {
-            drawGraphLine(tempPoints, canvas, width, height);
+            drawGraphLine(tempPoints, canvas, width, graphHeight);
         }
-        drawGraphLine(chargePoints, canvas, width, height);
+        drawGraphLine(chargePoints, canvas, width, graphHeight);
 
         String text = String.format("%d%%", (int) (history.get(0).getChargeFraction() * 100.0f));
         if (mSettings.showTemperatureGraph()) {
@@ -150,17 +161,75 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
         Paint paint = new Paint();
         paint.setAntiAlias(true);
-        paint.setTextSize(30.0f);
+        paint.setTextSize(20.0f * mPixelDensity);
         paint.setColor(Color.WHITE);
         paint.setStyle(Style.FILL);
         paint.setStrokeWidth(mPixelDensity);
         float textWidth = paint.measureText(text);
-        canvas.drawText(text, width - textWidth - 4, height - 4, paint);
+        canvas.drawText(text, width - textWidth - 4, graphHeight - 4, paint);
 
         return bmp;
     }
 
-    List<GraphPoint> renderChargeGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+    private void showTimeScale(Canvas canvas, int width, int height, int numMinutes,
+            int numGraphsShowing, boolean drawLines) {
+        Rect r = new Rect(0, (int)(height - 20 * mPixelDensity), width, height);
+        Paint bgPaint = new Paint();
+        bgPaint.setARGB(128, 0, 0, 0);
+        bgPaint.setStyle(Style.FILL);
+        for (int i = 0; i < numGraphsShowing; i++) {
+            canvas.drawRect(r, bgPaint);
+        }
+
+        Paint fgPaint = new Paint();
+        fgPaint.setAntiAlias(true);
+        fgPaint.setTextSize(18.0f * mPixelDensity);
+        fgPaint.setColor(Color.WHITE);
+        fgPaint.setStyle(Style.FILL);
+        fgPaint.setStrokeWidth(mPixelDensity);
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+
+        float x = width;
+        float pixelsPerMinute = (float) width / numMinutes;
+
+        int numDividers = 1;
+        while ((numDividers * 60) * pixelsPerMinute < 50.0f) {
+            if (numDividers == 1) {
+                numDividers = 3;
+            } else {
+                numDividers += 3;
+            }
+        }
+
+        for (int minute = 1; minute < numMinutes; minute++) {
+            x -= pixelsPerMinute;
+            cal.add(Calendar.MINUTE, -1);
+            if (cal.get(Calendar.MINUTE) == 0 &&
+                cal.get(Calendar.HOUR_OF_DAY) % numDividers == 0) {
+
+                int hour = cal.get(Calendar.HOUR_OF_DAY);
+                String ampm = "a";
+                if (hour > 12) {
+                    hour -= 12;
+                    ampm = "p";
+                } else if (hour == 12) {
+                    ampm = "p";
+                } else if (hour == 0) {
+                    hour = 12;
+                }
+                String text = String.format("%d%s", hour, ampm);
+                float textWidth = fgPaint.measureText(text);
+                canvas.drawText(text, x - (textWidth / 2), height - 4, fgPaint);
+                if (drawLines) {
+                    canvas.drawLine(x, 0, x, height - 20.0f * mPixelDensity, fgPaint);
+                }
+            }
+        }
+    }
+
+    private List<GraphPoint> renderChargeGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
         height -= 4;
         ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
         if (history.size() < 2) {
@@ -204,7 +273,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    List<GraphPoint> renderTempGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+    private List<GraphPoint> renderTempGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
         height -= 4;
         ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
         if (history.size() < 2) {
@@ -266,7 +335,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         return (temp - min) / range;
     }
 
-    void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width, int height) {
+    private void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width, int height) {
         Path path = new Path();
         path.moveTo(width, height);
         for (GraphPoint pt : points) {
@@ -281,7 +350,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         canvas.drawPath(path, paint);
     }
 
-    void drawGraphLine(List<GraphPoint> points, Canvas canvas, int width, int height) {
+    private void drawGraphLine(List<GraphPoint> points, Canvas canvas, int width, int height) {
         Path path = new Path();
         Paint paint = new Paint();
         paint.setAntiAlias(true);
