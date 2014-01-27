@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 import android.content.ContentValues;
 import android.content.Context;
@@ -32,6 +33,17 @@ public class BatteryStatus {
 
     public static void save(Context context, BatteryStatus status) {
         new Store(context).save(status);
+
+        if (new Random().nextDouble() < 0.01) {
+            // every now and then, we need to clear out the old data, so delete
+            // everything older than 1 week
+            Calendar cal = Calendar.getInstance();
+            cal.setTime(new Date());
+            cal.add(Calendar.DAY_OF_MONTH, -7);
+            Date dt = cal.getTime(); // 7 days ago
+
+            new Store(context).deleteOlderThan(dt.getTime());
+        }
     }
 
     /**
@@ -122,6 +134,22 @@ public class BatteryStatus {
                     db.insert("battery_history", null, values);
                 } catch(Exception e) {
                     // ignore errors... todo: log them
+                } finally {
+                    db.close();
+                }
+            }
+        }
+
+        /**
+         * Delete entries older than {@see dt}.
+         */
+        public void deleteOlderThan(long timestamp) {
+            synchronized(sLock) {
+                SQLiteDatabase db = getWritableDatabase();
+                try {
+                    db.delete("battery_history", "timestamp < "+timestamp, null);
+                } catch(Exception e) {
+                    // ignore errors... todo: log them?
                 } finally {
                     db.close();
                 }
