@@ -15,12 +15,16 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class BatteryStatus {
     private Date mDate;
     private float mChargeFraction;
+    private float mBatteryTemp;
 
     private BatteryStatus() {
     }
 
     public float getChargeFraction() {
         return mChargeFraction;
+    }
+    public float getBatteryTemp() {
+        return mBatteryTemp;
     }
     public Date getDate() {
         return mDate;
@@ -47,12 +51,18 @@ public class BatteryStatus {
     public static class Builder {
         private Date mDate;
         private float mChargeFraction;
+        private float mBatteryTemp;
 
         public Builder() {
         }
 
         public Builder chargeFraction(float percent) {
             mChargeFraction = percent;
+            return this;
+        }
+
+        public Builder batteryTemp(float temp) {
+            mBatteryTemp = temp;
             return this;
         }
 
@@ -65,6 +75,7 @@ public class BatteryStatus {
             BatteryStatus status = new BatteryStatus();
             status.mDate = mDate == null ? new Date() : mDate;
             status.mChargeFraction = mChargeFraction;
+            status.mBatteryTemp = mBatteryTemp;
             return status;
         }
     }
@@ -73,7 +84,7 @@ public class BatteryStatus {
         private static Object sLock = new Object();
 
         public Store(Context context) {
-            super(context, "battery.db", null, 1);
+            super(context, "battery.db", null, 3);
         }
 
         /**
@@ -84,12 +95,19 @@ public class BatteryStatus {
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE battery_history ("
                       +"  timestamp INTEGER,"
-                      +"  charge_percent REAL)");
+                      +"  charge_percent REAL,"
+                      +"  temperature REAL)");
             db.execSQL("CREATE INDEX IX_timestamp ON battery_history (timestamp)");
         }
 
         @Override
         public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+            if (oldVersion <= 1) {
+                db.execSQL("ALTER TABLE battery_history ADD COLUMN temperature REAL");
+            }
+            if (oldVersion <= 2) {
+                db.execSQL("UPDATE battery_history SET temperature=25.0 WHERE temperature=0");
+            }
         }
 
         public void save(BatteryStatus status) {
@@ -100,6 +118,7 @@ public class BatteryStatus {
                     ContentValues values = new ContentValues();
                     values.put("timestamp", status.mDate.getTime());
                     values.put("charge_percent", status.mChargeFraction);
+                    values.put("temperature", status.mBatteryTemp);
                     db.insert("battery_history", null, values);
                 } catch(Exception e) {
                     // ignore errors... todo: log them
@@ -113,7 +132,7 @@ public class BatteryStatus {
             SQLiteDatabase db = getReadableDatabase();
             Cursor cursor = null;
             try {
-                cursor = db.query("battery_history", new String[] {"timestamp", "charge_percent"},
+                cursor = db.query("battery_history", new String[] {"timestamp", "charge_percent", "temperature"},
                         "timestamp >= "+minTimestamp,
                         null, null, null, "timestamp DESC");
 
@@ -122,6 +141,7 @@ public class BatteryStatus {
                     statuses.add(new BatteryStatus.Builder()
                                     .timestamp(cursor.getLong(0))
                                     .chargeFraction(cursor.getFloat(1))
+                                    .batteryTemp(cursor.getFloat(2))
                                     .build());
                 }
 

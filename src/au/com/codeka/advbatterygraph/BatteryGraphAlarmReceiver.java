@@ -4,7 +4,6 @@ import java.util.Date;
 import java.util.List;
 
 import android.app.NotificationManager;
-import android.appwidget.AppWidgetManager;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -31,8 +30,11 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         float fraction = (float) level / scale;
         int percent = (int) (fraction * 100.0f);
 
+        int temperature = batteryStatus.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
+
         BatteryStatus status = new BatteryStatus.Builder()
                                                 .chargeFraction(fraction)
+                                                .batteryTemp(temperature / 10.0f)
                                                 .build();
         BatteryStatus.save(context, status);
 
@@ -44,7 +46,6 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         }
 
         // if we have to display a notification, do it now
-        int extraStatus = batteryStatus.getIntExtra(BatteryManager.EXTRA_STATUS, 0);
         handleNotifications(context, percent);
 
         // percent the last percent

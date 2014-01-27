@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 public class Settings {
     private int mGraphWidth;
     private int mGraphHeight;
+    private boolean mShowTempGraph;
 
     private static final String PREF_PREFIX = "au.com.codeka.advbatterygraph.";
 
@@ -25,6 +26,9 @@ public class Settings {
     public void setGraphHeight(int height) {
         mGraphHeight = height;
     }
+    public boolean showTemperatureGraph() {
+        return mShowTempGraph;
+    }
 
     public static Settings get(Context context) {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
@@ -32,6 +36,7 @@ public class Settings {
         Settings s = new Settings();
         s.mGraphWidth = pref.getInt(PREF_PREFIX+"GraphWidth", 40);
         s.mGraphHeight = pref.getInt(PREF_PREFIX+"GraphHeight", 40);
+        s.mShowTempGraph = pref.getBoolean(PREF_PREFIX+"IncludeTemp", false);
         return s;
     }
 

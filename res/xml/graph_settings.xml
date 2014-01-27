@@ -2,12 +2,16 @@
         xmlns:android="http://schemas.android.com/apk/res/android">
 
     <PreferenceCategory android:title="Graph Size">
-        <EditTextPreference
-                android:key="GraphWidth"
+        <au.com.codeka.advbatterygraph.EditTextIntegerPreference
+                android:key="au.com.codeka.advbatterygraph.GraphWidth"
+                android:numeric="integer"
+                android:inputType="number"
                 android:title="Width"
                 android:summary="Width of the graph" />
-        <EditTextPreference
-                android:key="GraphHeight"
+        <au.com.codeka.advbatterygraph.EditTextIntegerPreference
+                android:key="au.com.codeka.advbatterygraph.GraphHeight"
+                android:numeric="integer"
+                android:inputType="number"
                 android:title="Height"
                 android:summary="Height of the graph" />
     </PreferenceCategory>

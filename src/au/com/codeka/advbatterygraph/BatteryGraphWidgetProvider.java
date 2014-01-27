@@ -19,7 +19,6 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
-import android.graphics.PointF;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.RemoteViews;
@@ -95,55 +94,29 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         Bitmap bmp = Bitmap.createBitmap(width, height, Config.ARGB_8888);
         Canvas canvas = new Canvas(bmp);
 
-        List<PointF> points = renderGraph(history, numMinutes, width, height);
+        List<GraphPoint> tempPoints = null;
+        List<GraphPoint> chargePoints = renderChargeGraph(history, numMinutes, width, height);
 
-        // draw the background first
-        Path path = new Path();
-        path.moveTo(width, height);
-        for (PointF pt : points) {
-            path.lineTo(pt.x, pt.y);
+        if (mSettings.showTemperatureGraph()) {
+            tempPoints = renderTempGraph(history, numMinutes, width, height);
         }
-        path.lineTo(0, height);
-        path.lineTo(width, height);
-        Paint paint = new Paint();
-        paint.setAntiAlias(true);
-        paint.setARGB(128, 0, 0, 0);
-        paint.setStyle(Style.FILL);
-        canvas.drawPath(path, paint);
 
-        // then draw the line
-        paint.setStyle(Style.STROKE);
-        paint.setAlpha(255);
-        paint.setStrokeWidth(4.0f);
-        path = null;
-        int colour = Color.BLACK;
-        for (PointF pt : points) {
-            float pct = 1.0f - pt.y / height;
-            int thisColour;
-            if (pct < 0.14f) {
-                thisColour = Color.RED;
-            } else if (pct < 0.30f) {
-                thisColour = Color.YELLOW;
-            } else {
-                thisColour = Color.GREEN;
-            }
-            if (thisColour != colour || path == null) {
-                if (path != null) {
-                    path.lineTo(pt.x, pt.y);
-                    paint.setColor(colour);
-                    canvas.drawPath(path, paint);
-                    colour = thisColour;
-                }
-                path = new Path();
-                path.moveTo(pt.x, pt.y);
-            } else {
-                path.lineTo(pt.x, pt.y);
-            }
+        if (tempPoints != null) {
+            drawGraphBackground(tempPoints, canvas, width, height);
         }
-        paint.setColor(colour);
-        canvas.drawPath(path, paint);
+        drawGraphBackground(chargePoints, canvas, width, height);
+
+        if (tempPoints != null) {
+            drawGraphLine(tempPoints, canvas, width, height);
+        }
+        drawGraphLine(chargePoints, canvas, width, height);
 
         String text = String.format("%d%%", (int) (history.get(0).getChargeFraction() * 100.0f));
+        if (mSettings.showTemperatureGraph()) {
+            text = String.format("%.1f° - ", history.get(0).getBatteryTemp()) + text;
+        }
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
         paint.setTextSize(30.0f);
         paint.setColor(Color.WHITE);
         paint.setStyle(Style.FILL);
@@ -154,12 +127,12 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         return bmp;
     }
 
-    List<PointF> renderGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+    List<GraphPoint> renderChargeGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
         height -= 4;
-        ArrayList<PointF> points = new ArrayList<PointF>();
-        if (history.size() == 0) {
-            points.add(new PointF(width, height));
-            points.add(new PointF(0, height));
+        ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
+        if (history.size() < 2) {
+            points.add(new GraphPoint(width, height, Color.GREEN));
+            points.add(new GraphPoint(0, height, Color.GREEN));
             return points;
         }
 
@@ -170,7 +143,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         cal.setTime(new Date());
 
         BatteryStatus status = history.get(0);
-        points.add(new PointF(x, 2 + height - (height * status.getChargeFraction())));
+        points.add(new GraphPoint(x, 2 + height - (height * status.getChargeFraction()),
+                getColourForCharge(status.getChargeFraction())));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
             cal.add(Calendar.MINUTE, -1);
@@ -180,9 +154,136 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 j++;
             }
             status = history.get(j);
-            points.add(new PointF(x, 2 + height - (height * status.getChargeFraction())));
+            points.add(new GraphPoint(x, 2 + height - (height * status.getChargeFraction()),
+                    getColourForCharge(status.getChargeFraction())));
         }
 
         return points;
+    }
+
+    private int getColourForCharge(float charge) {
+        if (charge < 0.14f) {
+            return Color.RED;
+        } else if (charge < 0.30f) {
+            return Color.YELLOW;
+        } else {
+            return Color.GREEN;
+        }
+    }
+
+    List<GraphPoint> renderTempGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+        height -= 4;
+        ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
+        if (history.size() < 2) {
+            points.add(new GraphPoint(width, height, Color.BLUE));
+            points.add(new GraphPoint(0, height, Color.BLUE));
+            return points;
+        }
+
+        float maxTemp = 0.0f;
+        float minTemp = 1000.0f;
+        float avgTemp = 0.0f;
+        for (BatteryStatus status : history) {
+            if (maxTemp < status.getBatteryTemp()) {
+                maxTemp = status.getBatteryTemp();
+            }
+            if (minTemp > status.getBatteryTemp()) {
+                minTemp = status.getBatteryTemp();
+            }
+            avgTemp += status.getBatteryTemp();
+        }
+        avgTemp /= history.size();
+
+
+        // if the range is small (< 8 degrees) we'll expand it a bit
+        if (maxTemp - minTemp < 8.0f) {
+            minTemp = avgTemp - 4.0f;
+            maxTemp = avgTemp + 4.0f;
+        }
+
+        float x = width;
+        float pixelsPerMinute = (float) width / numMinutes;
+
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(new Date());
+
+        BatteryStatus status = history.get(0);
+        points.add(new GraphPoint(x, 2 + height - (height * getTempFraction(status.getBatteryTemp(), minTemp, maxTemp)), Color.BLUE));
+        for (int minute = 1, j = 1; minute < numMinutes; minute++) {
+            x -= pixelsPerMinute;
+            cal.add(Calendar.MINUTE, -1);
+            Date dt = cal.getTime();
+
+            while (j < history.size() - 1 && history.get(j).getDate().after(dt)) {
+                j++;
+            }
+            status = history.get(j);
+            points.add(new GraphPoint(x, 2 + height - (height * getTempFraction(status.getBatteryTemp(), minTemp, maxTemp)), Color.BLUE));
+        }
+
+        return points;
+    }
+
+    private static float getTempFraction(float temp, float min, float max) {
+        float range = max - min;
+        if (range < 0.01) {
+            return 0.0f;
+        }
+
+        return (temp - min) / range;
+    }
+
+    void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width, int height) {
+        Path path = new Path();
+        path.moveTo(width, height);
+        for (GraphPoint pt : points) {
+            path.lineTo(pt.x, pt.y);
+        }
+        path.lineTo(0, height);
+        path.lineTo(width, height);
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setARGB(128, 0, 0, 0);
+        paint.setStyle(Style.FILL);
+        canvas.drawPath(path, paint);
+    }
+
+    void drawGraphLine(List<GraphPoint> points, Canvas canvas, int width, int height) {
+        Path path = new Path();
+        Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setStyle(Style.STROKE);
+        paint.setAlpha(255);
+        paint.setStrokeWidth(4.0f);
+        path = null;
+        int colour = Color.BLACK;
+        for (GraphPoint pt : points) {
+            if (pt.colour != colour || path == null) {
+                if (path != null) {
+                    path.lineTo(pt.x, pt.y);
+                    paint.setColor(colour);
+                    canvas.drawPath(path, paint);
+                    colour = pt.colour;
+                }
+                path = new Path();
+                path.moveTo(pt.x, pt.y);
+            } else {
+                path.lineTo(pt.x, pt.y);
+            }
+        }
+        paint.setColor(colour);
+        canvas.drawPath(path, paint);
+    }
+
+    private static class GraphPoint {
+        public float x;
+        public float y;
+        public int colour;
+
+        public GraphPoint(float x, float y, int colour) {
+            this.x = x;
+            this.y = y;
+            this.colour = colour;
+        }
     }
 }

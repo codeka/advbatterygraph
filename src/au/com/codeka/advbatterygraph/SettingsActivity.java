@@ -2,6 +2,7 @@ package au.com.codeka.advbatterygraph;
 
 import java.util.List;
 
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceActivity;
@@ -17,7 +18,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
-public class SettingsActivity extends PreferenceActivity {
+public class SettingsActivity extends PreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -28,11 +29,29 @@ public class SettingsActivity extends PreferenceActivity {
         loadHeadersFromResource(R.xml.settings_headers, target);
     }
 
+    /**
+     * When preferences change, notify the graph to update itself.
+     */
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+        Intent i = new Intent(this, BatteryGraphWidgetProvider.class);
+        i.setAction(BatteryGraphWidgetProvider.CUSTOM_REFRESH_ACTION);
+        sendBroadcast(i);
+    }
+
     public static class GraphSettingsFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.graph_settings);
+        }
+    }
+
+    public static class TempSettingsFragment extends PreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.temp_settings);
         }
     }
 
@@ -146,5 +165,4 @@ public class SettingsActivity extends PreferenceActivity {
             screen.addPreference(pref);
         }
     }
-
 }
