@@ -55,7 +55,11 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         int lastPercent = sLastPercent;
         if (lastPercent == 0) {
             List<BatteryStatus> history = BatteryStatus.getHistory(context, 1);
-            lastPercent = (int) (history.get(1).getChargeFraction() * 100.0f);
+            if (history.size() > 1) {
+                lastPercent = (int) (history.get(1).getChargeFraction() * 100.0f);
+            } else {
+                return;
+            }
         }
         if (lastPercent == percent) {
             // if we haven't clicked over a percent, nothing to do.
