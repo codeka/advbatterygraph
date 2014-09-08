@@ -17,3 +17,6 @@ app/build/
 *.ipr
 *.iws
 .idea/
+local.properties
+.gradle/
+
