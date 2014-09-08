@@ -23,7 +23,8 @@
     </activity>
 
     <receiver android:process=":remote"
-              android:name=".BatteryGraphAlarmReceiver" />
+              android:name=".BatteryGraphAlarmReceiver">
+    </receiver>
 
     <receiver android:name=".BatteryGraphWidgetProvider"
               android:label="@string/app_name">
