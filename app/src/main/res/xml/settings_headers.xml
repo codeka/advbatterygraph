@@ -14,4 +14,9 @@
           android:icon="@drawable/ic_action_alarms"
           android:title="Notifications"
           android:summary="Notifications for battery levels" />
+
+  <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$ExportFragment"
+          android:icon="@drawable/ic_share"
+          android:title="Export data"
+          android:summary="Export data to a .csv file." />
 </preference-headers>

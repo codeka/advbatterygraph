@@ -25,9 +25,18 @@
       </intent-filter>
     </activity>
 
+    <provider android:name="android.support.v4.content.FileProvider"
+              android:authorities="au.com.codeka.advbatterygraph.exportprovider"
+              android:exported="false"
+              android:grantUriPermissions="true">
+      <meta-data android:name="android.support.FILE_PROVIDER_PATHS"
+                 android:resource="@xml/export_file_paths" />
+    </provider>
+
     <receiver android:process=":remote"
               android:name=".BatteryGraphAlarmReceiver">
     </receiver>
+
     <receiver android:name=".BatteryGraphWidgetProvider"
               android:label="@string/app_name">
       <intent-filter>
@@ -36,6 +45,7 @@
       <meta-data android:name="android.appwidget.provider"
                  android:resource="@xml/battery_graph_widget_provider" />
     </receiver>
+
     <service android:name=".WatchListenerService">
         <intent-filter>
             <action android:name="com.google.android.gms.wearable.BIND_LISTENER" />

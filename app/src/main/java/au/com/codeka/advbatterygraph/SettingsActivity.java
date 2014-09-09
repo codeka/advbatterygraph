@@ -1,15 +1,23 @@
 package au.com.codeka.advbatterygraph;
 
+import java.io.File;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Locale;
 
+import android.app.Fragment;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.PreferenceActivity;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
+import android.support.v4.content.FileProvider;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -19,8 +27,10 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
+import android.widget.TextView;
 
-public class SettingsActivity extends PreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingsActivity extends PreferenceActivity
+        implements SharedPreferences.OnSharedPreferenceChangeListener {
     private WatchConnection watchConnection = new WatchConnection();
 
     @Override
@@ -227,6 +237,58 @@ public class SettingsActivity extends PreferenceActivity implements SharedPrefer
             pref.setPositiveButtonText("Add");
             pref.setNegativeButtonText("Cancel");
             screen.addPreference(pref);
+        }
+    }
+
+    public static class ExportFragment extends Fragment {
+        private View mView;
+
+        @Override
+        public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle args) {
+            mView = inflater.inflate(R.layout.export_fragment, parent, false);
+            return mView;
+        }
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            doExport();
+        }
+
+        private void doExport() {
+            new AsyncTask<Void, Void, Uri> () {
+                @Override
+                protected Uri doInBackground(Void... voids) {
+                    FileProvider fileProvider = new FileProvider();
+                    File dir = new File(getActivity().getCacheDir(), "exports");
+                    if (!dir.exists()) {
+                        dir.mkdir();
+                    }
+                    File exportFile = new File(dir, "battery-graph.csv");
+                    try {
+                        exportFile.createNewFile();
+                        BatteryStatus.export(getActivity(), exportFile);
+                    } catch (IOException e) {
+                        // TODO: handle error
+                    }
+                    Uri contentUri = fileProvider.getUriForFile(getActivity(),
+                            "au.com.codeka.advbatterygraph.exportprovider", exportFile);
+                    return contentUri;
+                }
+
+                @Override
+                protected void onPostExecute(Uri contentUri) {
+                    mView.findViewById(R.id.progress).setVisibility(View.GONE);
+                    ((TextView) mView.findViewById(R.id.label)).setText("Export complete!");
+
+                    Intent shareIntent = new Intent();
+                    shareIntent.setAction(Intent.ACTION_SEND);
+                    shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+                    shareIntent.setType("text/csv");
+                    shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    startActivity(Intent.createChooser(shareIntent, "Share exported data"));
+                }
+            }.execute();
         }
     }
 }

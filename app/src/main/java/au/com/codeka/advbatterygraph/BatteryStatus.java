@@ -1,5 +1,11 @@
 package au.com.codeka.advbatterygraph;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -22,6 +28,7 @@ public class BatteryStatus {
     private BatteryStatus() {
     }
 
+    public int getDevice() { return mDevice; }
     public float getChargeFraction() {
         return mChargeFraction;
     }
@@ -59,6 +66,39 @@ public class BatteryStatus {
         Date dt = cal.getTime();
 
         return new Store(context).getHistory(device, dt.getTime());
+    }
+
+    /**
+     * Exports the complete history of battery data to the given file.
+     *
+     * @param context A {@link Context}.
+     * @param csvFile {@link File} to write the exported data (as a .csv file).
+     * @throws IOException
+     */
+    public static void export(Context context, File csvFile) throws IOException {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+
+        PrintWriter writer = new PrintWriter(new FileOutputStream(csvFile));
+        writer.println("Timestamp,PhoneBatteryFraction,PhoneBatteryPercent,"
+                + "PhoneTemperatureCelsius,WatchBatteryFraction,WatchBatteryPercent");
+        for (BatteryStatus batteryStatus : new Store(context).export()) {
+            writer.write(df.format(batteryStatus.getDate()));
+            writer.write(",");
+            if (batteryStatus.getDevice() == 0) {
+                writer.print(batteryStatus.getChargeFraction());
+                writer.write(",");
+                writer.print((int)(batteryStatus.getChargeFraction() * 100.0));
+                writer.write(",");
+                writer.print(batteryStatus.getBatteryTemp());
+                writer.write(",,");
+            } else {
+                writer.write(",,,");
+                writer.print(batteryStatus.getChargeFraction());
+                writer.write(",");
+                writer.print((int)(batteryStatus.getChargeFraction() * 100.0));
+            }
+            writer.println();
+        }
     }
 
     public static class Builder {
@@ -186,6 +226,32 @@ public class BatteryStatus {
                                     .chargeFraction(cursor.getFloat(1))
                                     .batteryTemp(cursor.getFloat(2))
                                     .build());
+                }
+
+                return statuses;
+            } catch (Exception e) {
+                // todo: log errors
+                return null;
+            } finally {
+                if (cursor != null) cursor.close();
+                db.close();
+            }
+        }
+
+        public List<BatteryStatus> export() {
+            SQLiteDatabase db = getReadableDatabase();
+            Cursor cursor = null;
+            try {
+                cursor = db.query("battery_history", new String[] {"timestamp", "device", "charge_percent", "temperature"},
+                        null, null, null, null, "timestamp DESC");
+
+                ArrayList<BatteryStatus> statuses = new ArrayList<BatteryStatus>();
+                while (cursor.moveToNext()) {
+                    statuses.add(new BatteryStatus.Builder(cursor.getInt(1))
+                            .timestamp(cursor.getLong(0))
+                            .chargeFraction(cursor.getFloat(2))
+                            .batteryTemp(cursor.getFloat(3))
+                            .build());
                 }
 
                 return statuses;
