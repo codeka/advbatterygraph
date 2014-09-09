@@ -15,6 +15,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 /** The class manages and maintains the historical battery state. */
 public class BatteryStatus {
     private Date mDate;
+    private int mDevice;
     private float mChargeFraction;
     private float mBatteryTemp;
 
@@ -51,21 +52,23 @@ public class BatteryStatus {
      * 
      * @param numHours The number of hours of data to return.
      */
-    public static List<BatteryStatus> getHistory(Context context, int numHours) {
+    public static List<BatteryStatus> getHistory(Context context, int device, int numHours) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
         cal.add(Calendar.HOUR_OF_DAY, -numHours);
         Date dt = cal.getTime();
 
-        return new Store(context).getHistory(dt.getTime());
+        return new Store(context).getHistory(device, dt.getTime());
     }
 
     public static class Builder {
         private Date mDate;
+        private int mDevice;
         private float mChargeFraction;
         private float mBatteryTemp;
 
-        public Builder() {
+        public Builder(int device) {
+            mDevice = device;
         }
 
         public Builder chargeFraction(float percent) {
@@ -86,6 +89,7 @@ public class BatteryStatus {
         public BatteryStatus build() {
             BatteryStatus status = new BatteryStatus();
             status.mDate = mDate == null ? new Date() : mDate;
+            status.mDevice = mDevice;
             status.mChargeFraction = mChargeFraction;
             status.mBatteryTemp = mBatteryTemp;
             return status;
@@ -96,7 +100,7 @@ public class BatteryStatus {
         private static Object sLock = new Object();
 
         public Store(Context context) {
-            super(context, "battery.db", null, 3);
+            super(context, "battery.db", null, 5);
         }
 
         /**
@@ -107,9 +111,10 @@ public class BatteryStatus {
         public void onCreate(SQLiteDatabase db) {
             db.execSQL("CREATE TABLE battery_history ("
                       +"  timestamp INTEGER,"
+                      +"  device INTEGER,"
                       +"  charge_percent REAL,"
                       +"  temperature REAL)");
-            db.execSQL("CREATE INDEX IX_timestamp ON battery_history (timestamp)");
+            db.execSQL("CREATE INDEX IX_device_timestamp ON battery_history (device, timestamp)");
         }
 
         @Override
@@ -120,6 +125,15 @@ public class BatteryStatus {
             if (oldVersion <= 2) {
                 db.execSQL("UPDATE battery_history SET temperature=25.0 WHERE temperature=0");
             }
+            if (oldVersion <= 3) {
+                db.execSQL("ALTER TABLE battery_history ADD COLUMN device INT");
+                db.execSQL("UPDATE battery_history SET device=0");
+                db.execSQL("DROP INDEX IX_timestamp");
+                db.execSQL("CREATE INDEX IX_device_timestamp ON battery_history (device, timestamp)");
+            }
+            if (oldVersion <= 4) {
+                db.execSQL("UPDATE battery_history SET timestamp = timestamp / 1000 WHERE device > 0");
+            }
         }
 
         public void save(BatteryStatus status) {
@@ -129,6 +143,7 @@ public class BatteryStatus {
                     // insert a new cached value
                     ContentValues values = new ContentValues();
                     values.put("timestamp", status.mDate.getTime());
+                    values.put("device", status.mDevice);
                     values.put("charge_percent", status.mChargeFraction);
                     values.put("temperature", status.mBatteryTemp);
                     db.insert("battery_history", null, values);
@@ -156,17 +171,17 @@ public class BatteryStatus {
             }
         }
 
-        public List<BatteryStatus> getHistory(long minTimestamp) {
+        public List<BatteryStatus> getHistory(int device, long minTimestamp) {
             SQLiteDatabase db = getReadableDatabase();
             Cursor cursor = null;
             try {
                 cursor = db.query("battery_history", new String[] {"timestamp", "charge_percent", "temperature"},
-                        "timestamp >= "+minTimestamp,
+                        "device = "+device+" AND timestamp >= "+minTimestamp,
                         null, null, null, "timestamp DESC");
 
                 ArrayList<BatteryStatus> statuses = new ArrayList<BatteryStatus>();
                 while (cursor.moveToNext()) {
-                    statuses.add(new BatteryStatus.Builder()
+                    statuses.add(new BatteryStatus.Builder(device)
                                     .timestamp(cursor.getLong(0))
                                     .chargeFraction(cursor.getFloat(1))
                                     .batteryTemp(cursor.getFloat(2))

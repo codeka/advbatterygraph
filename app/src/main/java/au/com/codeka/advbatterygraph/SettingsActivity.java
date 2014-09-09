@@ -21,11 +21,27 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 
 public class SettingsActivity extends PreferenceActivity implements SharedPreferences.OnSharedPreferenceChangeListener {
+    private WatchConnection watchConnection = new WatchConnection();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
+        watchConnection.setup(this);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        watchConnection.start();
+        watchConnection.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
+    }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        watchConnection.stop();
     }
 
     @Override

@@ -32,7 +32,7 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
 
         int temperature = batteryStatus.getIntExtra(BatteryManager.EXTRA_TEMPERATURE, -1);
 
-        BatteryStatus status = new BatteryStatus.Builder()
+        BatteryStatus status = new BatteryStatus.Builder(0) // device 0 is the phone
                                                 .chargeFraction(fraction)
                                                 .batteryTemp(temperature / 10.0f)
                                                 .build();
@@ -54,7 +54,7 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         // prefer to use this cached one, than fetching it from the DB every time...
         int lastPercent = sLastPercent;
         if (lastPercent == 0) {
-            List<BatteryStatus> history = BatteryStatus.getHistory(context, 1);
+            List<BatteryStatus> history = BatteryStatus.getHistory(context, 0, 1);
             if (history.size() > 1) {
                 lastPercent = (int) (history.get(1).getChargeFraction() * 100.0f);
             } else {
