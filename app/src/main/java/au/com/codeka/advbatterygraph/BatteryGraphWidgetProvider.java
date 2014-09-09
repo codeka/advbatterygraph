@@ -137,16 +137,20 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         int graphHeight = height;
         if (mSettings.showTimeScale()) {
-            graphHeight -= 26;
+            graphHeight -= 10 * mPixelDensity;
         }
 
-        List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(context, 0, mSettings.getNumHours());
-        List<BatteryStatus> watchHistory = BatteryStatus.getHistory(context, 1, mSettings.getNumHours());
+        List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(context, 0,
+                mSettings.getNumHours());
+        List<BatteryStatus> watchHistory = BatteryStatus.getHistory(context, 1,
+                mSettings.getNumHours());
 
         int numGraphsShowing = 1;
         List<GraphPoint> tempPoints = null;
-        List<GraphPoint> batteryChargePoints = renderChargeGraph(batteryHistory, numMinutes, width, graphHeight);
-        List<GraphPoint> watchChargePoints = renderChargeGraph(watchHistory, numMinutes, width, graphHeight);
+        List<GraphPoint> batteryChargePoints = renderChargeGraph(batteryHistory, numMinutes, width,
+                graphHeight, Color.GREEN);
+        List<GraphPoint> watchChargePoints = renderChargeGraph(watchHistory, numMinutes, width,
+                graphHeight, Color.argb(200, 0x00, 0xba, 0xff));
 
         if (mSettings.showTemperatureGraph()) {
             numGraphsShowing ++;
@@ -171,7 +175,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             drawGraphLine(tempPoints, canvas, width, graphHeight);
         }
         if (watchChargePoints.size() > 0) {
-            drawGraphLine(watchChargePoints, 100, canvas, width, graphHeight);
+            drawGraphLine(watchChargePoints, canvas, width, graphHeight);
         }
         drawGraphLine(batteryChargePoints, canvas, width, graphHeight);
 
@@ -193,7 +197,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     private void showTimeScale(Canvas canvas, int width, int height, int numMinutes,
             int numGraphsShowing, boolean drawLines) {
-        Rect r = new Rect(0, height - (int)(20 * mPixelDensity), width, height);
+        Rect r = new Rect(0, height - (int)(10 * mPixelDensity), width, height);
         Paint bgPaint = new Paint();
         bgPaint.setARGB(128, 0, 0, 0);
         bgPaint.setStyle(Style.FILL);
@@ -203,7 +207,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         Paint fgPaint = new Paint();
         fgPaint.setAntiAlias(true);
-        fgPaint.setTextSize(22.0f);
+        fgPaint.setTextSize(10 * mPixelDensity);
         fgPaint.setColor(Color.WHITE);
         fgPaint.setStyle(Style.FILL);
         fgPaint.setStrokeWidth(mPixelDensity);
@@ -243,13 +247,14 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 float textWidth = fgPaint.measureText(text);
                 canvas.drawText(text, x - (textWidth / 2), height - 4, fgPaint);
                 if (drawLines) {
-                    canvas.drawLine(x, 0, x, height - 26.0f, fgPaint);
+                    canvas.drawLine(x, 0, x, height - (10.0f * mPixelDensity), fgPaint);
                 }
             }
         }
     }
 
-    private List<GraphPoint> renderChargeGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+    private List<GraphPoint> renderChargeGraph(List<BatteryStatus> history, int numMinutes,
+                                               int width, int height, int baseColour) {
         height -= 4;
         ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
         if (history.size() < 2) {
@@ -266,7 +271,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         BatteryStatus status = history.get(0);
         points.add(new GraphPoint(x, 2 + height - (height * status.getChargeFraction()),
-                getColourForCharge(status.getChargeFraction())));
+                getColourForCharge(status.getChargeFraction(), baseColour)));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
             cal.add(Calendar.MINUTE, -1);
@@ -278,21 +283,24 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             status = history.get(j);
             float y = 2 + height - (height * status.getChargeFraction());
             if (y > 0) {
-              points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction())));
+              points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction(), baseColour)));
             }
         }
 
         return points;
     }
 
-    private int getColourForCharge(float charge) {
+    private int getColourForCharge(float charge, int baseColour) {
+        int colour = baseColour;
         if (charge < 0.14f) {
-            return Color.RED;
+            colour = Color.RED;
         } else if (charge < 0.30f) {
-            return Color.YELLOW;
-        } else {
-            return Color.GREEN;
+            colour = Color.YELLOW;
         }
+
+        // replace the alpha component in the colour with baseColour's alpha
+        return Color.argb(Color.alpha(baseColour), Color.red(colour), Color.green(colour),
+                Color.blue(colour));
     }
 
     private List<GraphPoint> renderTempGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
@@ -373,10 +381,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
 
     private void drawGraphLine(List<GraphPoint> points, Canvas canvas, int width, int height) {
-        drawGraphLine(points, 255, canvas, width, height);
-    }
-
-    private void drawGraphLine(List<GraphPoint> points, int alpha, Canvas canvas, int width, int height) {
         Paint paint = new Paint();
         paint.setAntiAlias(true);
         paint.setStyle(Style.STROKE);
@@ -388,8 +392,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             if (pt.colour != colour || path == null) {
                 if (path != null) {
                     path.lineTo(pt.x, pt.y);
-                    int argb = Color.argb(alpha, Color.red(pt.colour), Color.green(pt.colour), Color.blue(pt.colour));
-                    paint.setColor(argb);
+                    paint.setColor(colour);
                     canvas.drawPath(path, paint);
                     colour = pt.colour;
                 }
