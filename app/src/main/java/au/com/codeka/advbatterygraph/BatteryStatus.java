@@ -79,23 +79,31 @@ public class BatteryStatus {
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
 
         PrintWriter writer = new PrintWriter(new FileOutputStream(csvFile));
-        writer.println("Timestamp,PhoneBatteryFraction,PhoneBatteryPercent,"
-                + "PhoneTemperatureCelsius,WatchBatteryFraction,WatchBatteryPercent");
-        for (BatteryStatus batteryStatus : new Store(context).export()) {
+        writer.println("Timestamp,PhoneBatteryFraction,PhoneTemperatureCelsius,WatchBatteryFraction");
+        List<BatteryStatus> statuses = new Store(context).export();
+        for (int i = 0; i < statuses.size(); i++) {
+            BatteryStatus batteryStatus = statuses.get(i);
             writer.write(df.format(batteryStatus.getDate()));
             writer.write(",");
             if (batteryStatus.getDevice() == 0) {
                 writer.print(batteryStatus.getChargeFraction());
                 writer.write(",");
-                writer.print((int)(batteryStatus.getChargeFraction() * 100.0));
-                writer.write(",");
                 writer.print(batteryStatus.getBatteryTemp());
-                writer.write(",,");
-            } else {
-                writer.write(",,,");
-                writer.print(batteryStatus.getChargeFraction());
                 writer.write(",");
-                writer.print((int)(batteryStatus.getChargeFraction() * 100.0));
+
+                if (i < statuses.size() - 1) {
+                    BatteryStatus nextStatus = statuses.get(i+1);
+                    // if they're the same time to within 1 minute, and the next one is a watch, then
+                    // add it to this row as well.
+                    if (nextStatus.getDate().getTime() / 60000 == batteryStatus.getDate().getTime() / 60000
+                            && nextStatus.getDevice() > 0) {
+                        writer.print(nextStatus.getChargeFraction());
+                    }
+                    i++;
+                }
+            } else {
+                writer.write(",,");
+                writer.print(batteryStatus.getChargeFraction());
             }
             writer.println();
         }
@@ -243,7 +251,7 @@ public class BatteryStatus {
             Cursor cursor = null;
             try {
                 cursor = db.query("battery_history", new String[] {"timestamp", "device", "charge_percent", "temperature"},
-                        null, null, null, null, "timestamp DESC");
+                        null, null, null, null, "timestamp DESC, device ASC");
 
                 ArrayList<BatteryStatus> statuses = new ArrayList<BatteryStatus>();
                 while (cursor.moveToNext()) {
