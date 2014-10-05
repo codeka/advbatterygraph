@@ -59,9 +59,12 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             mRemoteViews = new RemoteViews(context.getPackageName(), R.layout.widget);
             mComponentName = new ComponentName(context, BatteryGraphWidgetProvider.class);
 
-            watchConnection.setup(context);
-            watchConnection.start();
-            watchConnection.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
+            if (mSettings.monitorWatch()) {
+                watchConnection.setup(context, null);
+                watchConnection.start();
+                watchConnection.sendMessage(
+                        new WatchConnection.Message("/advbatterygraph/Start", null));
+            }
 
             if (intent.getAction().equals(CUSTOM_REFRESH_ACTION)) {
                 int[] appWidgetIds = null;
@@ -114,11 +117,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingIntent);
 
-        // make sure stuff on the watch is running as well
-        watchConnection.setup(context);
-        watchConnection.start();
-        watchConnection.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
-
         refreshGraph(context, appWidgetIds);
     }
 
@@ -153,8 +151,12 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(context, 0,
                 mSettings.getNumHours());
-        List<BatteryStatus> watchHistory = BatteryStatus.getHistory(context, 1,
-                mSettings.getNumHours());
+        List<BatteryStatus> watchHistory;
+        if (mSettings.monitorWatch()) {
+            watchHistory = BatteryStatus.getHistory(context, 1, mSettings.getNumHours());
+        } else {
+            watchHistory = new ArrayList<BatteryStatus>();
+        }
 
         int numGraphsShowing = 1;
         List<GraphPoint> tempPoints = null;
@@ -191,6 +193,9 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         drawGraphLine(batteryChargePoints, canvas, width, graphHeight);
 
         String text = String.format("%d%%", (int) (batteryHistory.get(0).getChargeFraction() * 100.0f));
+        if (watchHistory.size() > 0) {
+            text = String.format("P:%s W:%d%%", text, (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
+        }
         if (mSettings.showTemperatureGraph()) {
             text = String.format("%.1f° - ", batteryHistory.get(0).getBatteryTemp()) + text;
         }

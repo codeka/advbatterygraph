@@ -2,6 +2,7 @@ package au.com.codeka.advbatterygraph;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -23,7 +24,15 @@ public class WatchConnection {
     private ArrayList<Message> pendingMessages = new ArrayList<Message>();
     private ArrayList<String> watchNodes = new ArrayList<String>();
 
-    public void setup(Context context) {
+    public void setup(Context context, @Nullable final Runnable onConnectedRunnable) {
+        if (googleApiClient != null) {
+            // only need to do this once.
+            if (isConnected && onConnectedRunnable != null) {
+                onConnectedRunnable.run();
+            }
+            return;
+        }
+
         googleApiClient = new GoogleApiClient.Builder(context)
                 .addConnectionCallbacks(new GoogleApiClient.ConnectionCallbacks() {
                     @Override
@@ -41,6 +50,9 @@ public class WatchConnection {
                                             sendMessage(msg);
                                         }
                                         pendingMessages.clear();
+                                        if (onConnectedRunnable != null) {
+                                            onConnectedRunnable.run();
+                                        }
                                     }
                                 });
                     }
@@ -69,13 +81,16 @@ public class WatchConnection {
         googleApiClient.disconnect();
     }
 
+    public boolean isConnected() {
+        return this.isConnected && watchNodes.size() > 0;
+    }
+
     public void sendMessage(Message msg) {
-        Log.i(TAG, "Sending message: "+msg.getPath());
         if (!isConnected) {
-            Log.i(TAG, "Adding to pending messages.");
+            Log.d(TAG, "Messages " + msg.getPath() + " added to pending queue.");
             pendingMessages.add(msg);
         } else {
-            Log.i(TAG, "Actually sending!");
+            Log.d(TAG, "Sending message: "+msg.getPath());
             for (String watchNode : watchNodes) {
                 Wearable.MessageApi.sendMessage(googleApiClient, watchNode, msg.getPath(),
                         msg.getPayload());
@@ -86,11 +101,6 @@ public class WatchConnection {
     public static class Message {
         private final String path;
         private final byte[] payload;
-
-        public Message(String path) {
-            this.path = path;
-            this.payload = null;
-        }
 
         public Message(String path, byte[] payload) {
             this.path = path;

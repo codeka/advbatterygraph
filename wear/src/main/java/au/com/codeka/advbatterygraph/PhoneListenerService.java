@@ -16,9 +16,8 @@ public class PhoneListenerService extends WearableListenerService {
 
     @Override
     public void onMessageReceived(MessageEvent msgEvent) {
-        Log.i(TAG, msgEvent.getPath());
         if (msgEvent.getPath().equals("/advbatterygraph/Start")) {
-            Log.i(TAG, "Got notification to fetch battery status!");
+            Log.d(TAG, "Got notification to fetch battery status.");
             // get the current battery status intent
             // TODO: this should be shared with the phone code better than just duplicating it...
             Intent batteryStatus = this.registerReceiver(null,
@@ -28,7 +27,7 @@ public class PhoneListenerService extends WearableListenerService {
             int scale = batteryStatus.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
             float fraction = (float) level / scale;
 
-            Log.i(TAG, "Battery percent: " + fraction);
+            Log.d(TAG, "Battery percent: " + fraction);
             BatteryGraphSyncer syncer = new BatteryGraphSyncer(this);
             syncer.syncBatteryGraph(fraction, System.currentTimeMillis());
         }

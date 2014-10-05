@@ -5,6 +5,12 @@
           android:title="Graph Settings"
           android:summary="Size and look of the graph widget." />
 
+  <header android:id="@+id/watch_settings_header"
+          android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$WatchSettingsFragment"
+          android:icon="@drawable/ic_watch"
+          android:title="Watch Settings"
+          android:summary="Settings for monitoring your watches battery" />
+
   <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$TempSettingsFragment"
           android:icon="@drawable/ic_temp"
           android:title="Temperature Graph"

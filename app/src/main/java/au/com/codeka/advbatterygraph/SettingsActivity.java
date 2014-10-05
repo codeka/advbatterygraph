@@ -37,8 +37,9 @@ public class SettingsActivity extends PreferenceActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        PreferenceManager.getDefaultSharedPreferences(this).registerOnSharedPreferenceChangeListener(this);
-        watchConnection.setup(this);
+        PreferenceManager.getDefaultSharedPreferences(this)
+                .registerOnSharedPreferenceChangeListener(this);
+        watchConnection.setup(this, watchConnectedRunnable);
     }
 
     @Override
@@ -57,7 +58,25 @@ public class SettingsActivity extends PreferenceActivity
     @Override
     public void onBuildHeaders(List<PreferenceActivity.Header> target) {
         loadHeadersFromResource(R.xml.settings_headers, target);
+        if (!watchConnection.isConnected()) {
+            // if we're not connected to a watch, don't show the watch headings
+            for (PreferenceActivity.Header header : target) {
+                if (header.id == R.id.watch_settings_header) {
+                    target.remove(header);
+                    break;
+                }
+            }
+        }
     }
+
+    private Runnable watchConnectedRunnable = new Runnable() {
+        @Override
+        public void run() {
+            // Just invalidate the headers, the onBuildHeaders logic will recreate the headers
+            // with the watch enabled again.
+            invalidateHeaders();
+        }
+    };
 
     /**
      * When preferences change, notify the graph to update itself.
@@ -110,6 +129,18 @@ public class SettingsActivity extends PreferenceActivity
 
             ListPreference listpref = (ListPreference) findPreference(Settings.PREF_PREFIX+"NumHours");
             listpref.setSummary(listpref.getEntry());
+        }
+    }
+
+    public static class WatchSettingsFragment extends BasePreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.watch_settings);
+        }
+
+        @Override
+        protected void refreshSummaries() {
         }
     }
 
