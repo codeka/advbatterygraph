@@ -16,6 +16,7 @@ import android.widget.TextView;
 public class NotificationSettingDialog extends DialogPreference {
     private SeekBar mPercentBar;
     private Spinner mDirectionSpinner;
+    private Spinner mDeviceSpinner;
 
     public NotificationSettingDialog(Context context) {
         this(context, null);
@@ -33,6 +34,7 @@ public class NotificationSettingDialog extends DialogPreference {
         mPercentBar = (SeekBar) view.findViewById(R.id.percent_bar);
         final TextView percentText = (TextView) view.findViewById(R.id.percent_text);
         mDirectionSpinner = (Spinner) view.findViewById(R.id.direction_spinner);
+        mDeviceSpinner = (Spinner) view.findViewById(R.id.device_spinner);
 
         mPercentBar.setMax(20);
         mPercentBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -51,20 +53,31 @@ public class NotificationSettingDialog extends DialogPreference {
             }
         });
 
-        ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(getContext(),
+        ArrayAdapter<CharSequence> deviceAdapter = ArrayAdapter.createFromResource(getContext(),
+                R.array.devices, android.R.layout.simple_spinner_item);
+        deviceAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mDeviceSpinner.setAdapter(deviceAdapter);
+
+        ArrayAdapter<CharSequence> directionAdapter = ArrayAdapter.createFromResource(getContext(),
                 R.array.charge_directions, android.R.layout.simple_spinner_item);
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        mDirectionSpinner.setAdapter(adapter);
+        directionAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        mDirectionSpinner.setAdapter(directionAdapter);
 
         if (!getKey().equals("notification:new")) {
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
             int percent = prefs.getInt(getKey()+":percent", 0);
             String direction = prefs.getString(getKey()+":direction", "");
+            String device = prefs.getString(getKey()+":device", "");
 
             mPercentBar.setProgress(percent / 5);
-            for (int i = 0; i < adapter.getCount(); i++) {
-                if (adapter.getItem(i).equals(direction)) {
+            for (int i = 0; i < directionAdapter.getCount(); i++) {
+                if (directionAdapter.getItem(i).equals(direction)) {
                     mDirectionSpinner.setSelection(i);
+                }
+            }
+            for (int i = 0; i < deviceAdapter.getCount(); i++) {
+                if (deviceAdapter.getItem(i).equals(device)) {
+                    mDeviceSpinner.setSelection(i);
                 }
             }
         }
@@ -80,10 +93,12 @@ public class NotificationSettingDialog extends DialogPreference {
 
             int percent = mPercentBar.getProgress() * 5;
             String direction = (String) mDirectionSpinner.getSelectedItem();
+            String device = (String) mDeviceSpinner.getSelectedItem();
 
             getSharedPreferences().edit()
                 .putInt(getKey()+":percent", percent)
                 .putString(getKey()+":direction", direction)
+                .putString(getKey()+":device", device)
                 .commit();
         }
     }

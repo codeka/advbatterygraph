@@ -227,19 +227,22 @@ public class SettingsActivity extends PreferenceActivity
 
                 int percent = prefs.getInt(key, -1);
                 String dir = prefs.getString(String.format("notification:%d:direction", j), "");
+                String device = prefs.getString(String.format("notification:%d:device", j), "");
 
                 editor.putInt(String.format("notification:%d:percent", j - 1), percent);
                 editor.putString(String.format("notification:%d:direction", j - 1), dir);
+                editor.putString(String.format("notification:%d:device", i - 1), device);
                 last = j;
             }
 
             editor.remove(String.format("notification:%d:percent", last));
             editor.remove(String.format("notification:%d:direction", last));
+            editor.remove(String.format("notification:%d:device", last));
             editor.commit();
         }
 
         private void refreshNotificationPrefs() {
-            PreferenceScreen screen = (PreferenceScreen) getPreferenceScreen();
+            PreferenceScreen screen = getPreferenceScreen();
             screen.removeAll();
 
             SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
@@ -251,10 +254,11 @@ public class SettingsActivity extends PreferenceActivity
 
                 int percent = prefs.getInt(key, -1);
                 String dir = prefs.getString(String.format("notification:%d:direction", i), "");
+                String device = prefs.getString(String.format("notification:%d:device", i), "Phone");
 
                 NotificationSettingDialog pref = new NotificationSettingDialog(getActivity());
                 pref.setKey(String.format("notification:%d", i));
-                pref.setTitle(String.format("%d%% and %s", percent, dir.toLowerCase()));
+                pref.setTitle(String.format("%s %d%% and %s", device, percent, dir.toLowerCase()));
                 pref.setDialogLayoutResource(R.layout.notification_pref);
                 pref.setPositiveButtonText("Save");
                 pref.setNegativeButtonText("Cancel");
