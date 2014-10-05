@@ -64,7 +64,12 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             watchConnection.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
 
             if (intent.getAction().equals(CUSTOM_REFRESH_ACTION)) {
-                refreshGraph(context);
+                int[] appWidgetIds = null;
+                Bundle extras = intent.getExtras();
+                if (extras != null) {
+                    appWidgetIds = extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS);
+                }
+                refreshGraph(context, appWidgetIds);
             } else {
                 super.onReceive(context, intent);
             }
@@ -84,12 +89,13 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
      * override :\
      */
     @Override
-    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int appWidgetId, Bundle newOptions) {
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
+                                          int appWidgetId, Bundle newOptions) {
         mSettings.setGraphWidth(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH));
         mSettings.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
         mSettings.save(context);
 
-        refreshGraph(context);
+        refreshGraph(context, new int[] { appWidgetId });
     }
 
     /**
@@ -106,20 +112,23 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
         alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingIntent);
 
-        intent = new Intent(context, SettingsActivity.class);
-        intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-        pendingIntent = PendingIntent.getActivity(context, 0 , intent, PendingIntent.FLAG_UPDATE_CURRENT);
-        mRemoteViews.setOnClickPendingIntent(R.id.image, pendingIntent);
-
         // make sure stuff on the watch is running as well
         watchConnection.setup(context);
         watchConnection.start();
         watchConnection.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
 
-        refreshGraph(context);
+        refreshGraph(context, appWidgetIds);
     }
 
-    private void refreshGraph(Context context) {
+    private void refreshGraph(Context context, int[] appWidgetIds) {
+        if (appWidgetIds != null) {
+            Intent intent = new Intent(context, SettingsActivity.class);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT);
+            mRemoteViews.setOnClickPendingIntent(R.id.image, pendingIntent);
+        }
+
         int numMinutes = mSettings.getNumHours() * 60;
         Bitmap bmp = renderGraph(context, numMinutes);
         mRemoteViews.setImageViewBitmap(R.id.image, bmp);
