@@ -174,8 +174,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             graphHeight -= 10 * mPixelDensity;
         }
 
-        List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(context, 0,
-                graphSettings.getNumHours());
+        List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(
+                context, 0, graphSettings.getNumHours());
         List<BatteryStatus> watchHistory;
         if (mSettings.monitorWatch()) {
             watchHistory = BatteryStatus.getHistory(context, 1, graphSettings.getNumHours());
@@ -185,8 +185,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
         int numGraphsShowing = 1;
         List<GraphPoint> tempPoints = null;
-        List<GraphPoint> batteryChargePoints = renderChargeGraph(batteryHistory, numMinutes, width,
-                graphHeight, Color.GREEN);
+        List<GraphPoint> batteryChargePoints = null;
+        if (graphSettings.showBatteryGraph()) {
+            batteryChargePoints = renderChargeGraph(batteryHistory, numMinutes, width,
+                    graphHeight, Color.GREEN);
+        }
         List<GraphPoint> watchChargePoints = renderChargeGraph(watchHistory, numMinutes, width,
                 graphHeight, Color.argb(200, 0x00, 0xba, 0xff));
 
@@ -208,7 +211,9 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         if (watchChargePoints.size() > 0) {
             drawGraphBackground(watchChargePoints, canvas, width, graphHeight);
         }
-        drawGraphBackground(batteryChargePoints, canvas, width, graphHeight);
+        if (batteryChargePoints != null) {
+            drawGraphBackground(batteryChargePoints, canvas, width, graphHeight);
+        }
 
         if (tempPoints != null) {
             drawGraphLine(tempPoints, canvas, width, graphHeight);
@@ -216,11 +221,20 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         if (watchChargePoints.size() > 0) {
             drawGraphLine(watchChargePoints, canvas, width, graphHeight);
         }
-        drawGraphLine(batteryChargePoints, canvas, width, graphHeight);
+        if (batteryChargePoints != null) {
+            drawGraphLine(batteryChargePoints, canvas, width, graphHeight);
+        }
 
-        String text = String.format("%d%%", (int) (batteryHistory.get(0).getChargeFraction() * 100.0f));
+        String text = "";
+        if (batteryChargePoints != null) {
+            text = String.format("%d%%", (int) (batteryHistory.get(0).getChargeFraction() * 100.0f));
+        }
         if (watchHistory.size() > 0) {
-            text = String.format("P:%s W:%d%%", text, (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
+            if (batteryChargePoints != null) {
+                text = String.format("P:%s W:%d%%", text, (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
+            } else {
+                text = String.format("%d%%", (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
+            }
         }
         if (graphSettings.showTemperatureGraph()) {
             text = String.format("%.1f° - ", batteryHistory.get(0).getBatteryTemp()) + text;

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+    <PreferenceCategory android:title="Battery Graph">
+        <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).IncludeBattery"
+            android:title="Battery Charge"
+            android:summary="Include a graph of battery charge percentage."
+            android:defaultValue="true"/>
+    </PreferenceCategory>
+</PreferenceScreen>

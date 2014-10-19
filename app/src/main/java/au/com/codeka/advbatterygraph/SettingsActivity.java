@@ -225,6 +225,18 @@ public class SettingsActivity extends PreferenceActivity
         }
     }
 
+    public static class BatterySettingsFragment extends BasePreferenceFragment {
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            addPreferencesFromResource(R.xml.battery_settings);
+        }
+
+        @Override
+        protected void refreshSummaries() {
+        }
+    }
+
     public static class TempSettingsFragment extends BasePreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {

@@ -48,6 +48,7 @@ public class Settings {
         private String mPrefix;
         private int mGraphWidth;
         private int mGraphHeight;
+        private boolean mShowBatteryGraph;
         private boolean mShowTempGraph;
         private int mNumHours;
         private boolean mShowTimeScale;
@@ -66,6 +67,9 @@ public class Settings {
         }
         public void setGraphHeight(int height) {
             mGraphHeight = height;
+        }
+        public boolean showBatteryGraph() {
+            return mShowBatteryGraph;
         }
         public boolean showTemperatureGraph() {
             return mShowTempGraph;
@@ -86,6 +90,7 @@ public class Settings {
             gs.mAutoGraphSize = pref.getBoolean(prefix+"AutoGraph", true);
             gs.mGraphWidth = pref.getInt(prefix+"GraphWidth", 40);
             gs.mGraphHeight = pref.getInt(prefix+"GraphHeight", 40);
+            gs.mShowBatteryGraph = pref.getBoolean(prefix+"IncludeBattery", true);
             gs.mShowTempGraph = pref.getBoolean(prefix+"IncludeTemp", false);
             gs.mNumHours = Integer.parseInt(pref.getString(prefix+"NumHours", Integer.toString(48)));
             gs.mShowTimeScale = pref.getBoolean(prefix+"ShowTime", false);
@@ -102,6 +107,7 @@ public class Settings {
                 .putBoolean(prefix+"AutoGraph", mAutoGraphSize)
                 .putInt(prefix+"GraphWidth", mGraphWidth)
                 .putInt(prefix+"GraphHeight", mGraphHeight)
+                .putBoolean(pref+"IncludeBattery", mShowBatteryGraph)
                 .putBoolean(prefix+"IncludeTemp", mShowTempGraph)
                 .putString(prefix+"NumHours", Integer.toString(mNumHours))
                 .putBoolean(prefix+"ShowTime", mShowTimeScale)
