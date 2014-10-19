@@ -50,6 +50,7 @@ public class Settings {
         private int mGraphHeight;
         private boolean mShowBatteryGraph;
         private boolean mShowTempGraph;
+        private boolean mTempCelsius;
         private int mNumHours;
         private boolean mShowTimeScale;
         private boolean mShowTimeLines;
@@ -74,6 +75,7 @@ public class Settings {
         public boolean showTemperatureGraph() {
             return mShowTempGraph;
         }
+        public boolean tempInCelsius() { return mTempCelsius; }
         public int getNumHours() {
             return mNumHours;
         }
@@ -92,6 +94,7 @@ public class Settings {
             gs.mGraphHeight = pref.getInt(prefix+"GraphHeight", 40);
             gs.mShowBatteryGraph = pref.getBoolean(prefix+"IncludeBattery", true);
             gs.mShowTempGraph = pref.getBoolean(prefix+"IncludeTemp", false);
+            gs.mTempCelsius = pref.getString(prefix+"TempUnits", "C").toLowerCase().equals("c");
             gs.mNumHours = Integer.parseInt(pref.getString(prefix+"NumHours", Integer.toString(48)));
             gs.mShowTimeScale = pref.getBoolean(prefix+"ShowTime", false);
             gs.mShowTimeLines = pref.getBoolean(prefix+"ShowTimeLines", false);
@@ -109,6 +112,7 @@ public class Settings {
                 .putInt(prefix+"GraphHeight", mGraphHeight)
                 .putBoolean(pref+"IncludeBattery", mShowBatteryGraph)
                 .putBoolean(prefix+"IncludeTemp", mShowTempGraph)
+                .putString(prefix+"TempUnits", mTempCelsius ? "C" : "F")
                 .putString(prefix+"NumHours", Integer.toString(mNumHours))
                 .putBoolean(prefix+"ShowTime", mShowTimeScale)
                 .putBoolean(prefix+"ShowTimeLines", mShowTimeLines)

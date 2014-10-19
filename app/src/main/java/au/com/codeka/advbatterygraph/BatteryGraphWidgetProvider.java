@@ -237,7 +237,18 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             }
         }
         if (graphSettings.showTemperatureGraph()) {
-            text = String.format("%.1f° - ", batteryHistory.get(0).getBatteryTemp()) + text;
+            float celsius = batteryHistory.get(0).getBatteryTemp();
+            String temp;
+            if (graphSettings.tempInCelsius()) {
+                temp = String.format("%.1f°", celsius);
+            } else {
+                temp = String.format("%.1f°", celsius * 9.0f / 5.0f + 32.0f) ;
+            }
+            if (text != "") {
+                text = temp + " - " + text;
+            } else {
+                text = temp;
+            }
         }
         Paint paint = new Paint();
         paint.setAntiAlias(true);

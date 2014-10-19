@@ -25,4 +25,13 @@
     <item>72</item>
     <item>168</item>
   </string-array>
+
+  <string-array name="temp_units_display">
+    <item>Celsius</item>
+    <item>Fahrenheit</item>
+  </string-array>
+  <string-array name="temp_units_values">
+    <item>C</item>
+    <item>F</item>
+  </string-array>
 </resources>

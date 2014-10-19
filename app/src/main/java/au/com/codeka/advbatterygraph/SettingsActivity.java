@@ -246,6 +246,8 @@ public class SettingsActivity extends PreferenceActivity
 
         @Override
         protected void refreshSummaries() {
+            ListPreference listpref = (ListPreference) findPreference(getPrefix()+"TempUnits");
+            listpref.setSummary(listpref.getEntry());
         }
     }
 
