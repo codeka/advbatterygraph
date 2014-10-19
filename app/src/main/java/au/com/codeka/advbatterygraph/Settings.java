@@ -29,8 +29,10 @@ public class Settings {
                 break;
             }
         }
-        mMonitorWatch = monitor;
-        mPreferences.edit().putBoolean(PREF_PREFIX+"MonitorWatch", monitor).apply();
+        if (mMonitorWatch != monitor) {
+            mMonitorWatch = monitor;
+            mPreferences.edit().putBoolean(PREF_PREFIX + "MonitorWatch", monitor).apply();
+        }
         return mMonitorWatch;
     }
 
