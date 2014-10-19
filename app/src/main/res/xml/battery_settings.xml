@@ -5,17 +5,17 @@
             android:title="Battery Charge"
             android:summary="Include a graph of battery charge percentage."
             android:defaultValue="true" />
-        <CheckBoxPreference android:id="@+id/current_setting"
+        <CheckBoxPreference
             android:key="au.com.codeka.advbatterygraph.(%d).IncludeBatteryCurrentInstant"
             android:title="Instantaneous Battery Current"
             android:summary="Include a graph of instantaneous battery current in milliamperes."
             android:defaultValue="false" />
-        <CheckBoxPreference android:id="@+id/current_setting"
+        <CheckBoxPreference
             android:key="au.com.codeka.advbatterygraph.(%d).IncludeBatteryCurrentAvg"
             android:title="Average Battery Current"
             android:summary="Include a graph of average battery current in milliamperes. The timeframe over which the average is calculated is device-dependent."
             android:defaultValue="false" />
-        <CheckBoxPreference android:id="@+id/current_setting"
+        <CheckBoxPreference
             android:key="au.com.codeka.advbatterygraph.(%d).IncludeBatteryEnergy"
             android:title="Battery Energy"
             android:summary="Include a graph of battery energy in milliwatt-hours."

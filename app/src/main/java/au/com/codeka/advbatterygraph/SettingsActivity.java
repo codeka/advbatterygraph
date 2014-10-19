@@ -9,10 +9,12 @@ import java.util.Locale;
 
 import android.app.Fragment;
 import android.appwidget.AppWidgetManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
@@ -38,6 +40,7 @@ import android.widget.TextView;
 
 public class SettingsActivity extends PreferenceActivity
         implements SharedPreferences.OnSharedPreferenceChangeListener {
+    private static final String TAG = "SettingsActivity";
     private WatchConnection watchConnection = new WatchConnection();
 
     @Override
@@ -233,9 +236,39 @@ public class SettingsActivity extends PreferenceActivity
             addPreferencesFromResource(R.xml.battery_settings);
 
             // battery charge is only available on Android L (API level 21)+.
-            //if (Build.VERSION >= Build.VERSION_CODES.L) {
-                
-            //}
+            Preference batteryCurrentInstantPref = findPreference(getPrefix() + "IncludeBatteryCurrentInstant");
+            Preference batteryCurrentAvgPref = findPreference(getPrefix() + "IncludeBatteryCurrentAvg");
+            Preference batteryEnergyPref = findPreference(getPrefix() + "IncludeBatteryEnergy");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.L) {
+                BatteryManager batteryManager = (BatteryManager) getActivity()
+                        .getSystemService(Context.BATTERY_SERVICE);
+                batteryCurrentInstantPref.setEnabled(batteryManager.getIntProperty(
+                        BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) != Integer.MIN_VALUE);
+                batteryCurrentAvgPref.setEnabled(batteryManager.getIntProperty(
+                        BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE) != Integer.MIN_VALUE);
+                batteryEnergyPref.setEnabled(batteryManager.getIntProperty(
+                        BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) != Integer.MIN_VALUE);
+            } else {
+                Log.w(TAG, "Not Lollipop, no battery properties available.");
+                batteryCurrentInstantPref.setEnabled(false);
+                batteryCurrentAvgPref.setEnabled(false);
+                batteryEnergyPref.setEnabled(false);
+            }
+            if (!batteryCurrentInstantPref.isEnabled()) {
+                batteryCurrentInstantPref.getSharedPreferences().edit()
+                        .putBoolean(batteryCurrentInstantPref.getKey(), false)
+                        .apply();
+            }
+            if (!batteryCurrentAvgPref.isEnabled()) {
+                batteryCurrentAvgPref.getSharedPreferences().edit()
+                        .putBoolean(batteryCurrentAvgPref.getKey(), false)
+                        .apply();
+            }
+            if (!batteryEnergyPref.isEnabled()) {
+                batteryEnergyPref.getSharedPreferences().edit()
+                        .putBoolean(batteryEnergyPref.getKey(), false)
+                        .apply();
+            }
         }
 
         @Override

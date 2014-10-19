@@ -29,15 +29,16 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         long currentAvgMicroAmperes = 0;
         long energyMicroWattHours = 0;
         try {
-            currentInstantMicroAmperes = new BatteryManager().getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
+            BatteryManager batteryManager = (BatteryManager) context.getSystemService(Context.BATTERY_SERVICE);
+            currentInstantMicroAmperes = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
             if (currentInstantMicroAmperes == Long.MIN_VALUE) {
                 currentInstantMicroAmperes = 0;
             }
-            currentAvgMicroAmperes = new BatteryManager().getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE);
+            currentAvgMicroAmperes = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE);
             if (currentAvgMicroAmperes == Long.MIN_VALUE) {
                 currentAvgMicroAmperes = 0;
             }
-            energyMicroWattHours = new BatteryManager().getIntProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
+            energyMicroWattHours = batteryManager.getIntProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
             if (energyMicroWattHours == Long.MIN_VALUE) {
                 energyMicroWattHours = 0;
             }
