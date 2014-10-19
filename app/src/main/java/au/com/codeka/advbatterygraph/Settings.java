@@ -49,6 +49,9 @@ public class Settings {
         private int mGraphWidth;
         private int mGraphHeight;
         private boolean mShowBatteryGraph;
+        private boolean mShowBatteryCurrentInstant;
+        private boolean mShowBatteryCurrentAvg;
+        private boolean mShowBatteryEnergy;
         private boolean mShowTempGraph;
         private boolean mTempCelsius;
         private int mNumHours;
@@ -72,6 +75,9 @@ public class Settings {
         public boolean showBatteryGraph() {
             return mShowBatteryGraph;
         }
+        public boolean showBatteryCurrentInstant() { return mShowBatteryCurrentInstant; }
+        public boolean showBatteryCurrentAvg() { return mShowBatteryCurrentAvg; }
+        public boolean showBatteryEnergy() { return mShowBatteryEnergy; }
         public boolean showTemperatureGraph() {
             return mShowTempGraph;
         }
@@ -93,6 +99,9 @@ public class Settings {
             gs.mGraphWidth = pref.getInt(prefix+"GraphWidth", 40);
             gs.mGraphHeight = pref.getInt(prefix+"GraphHeight", 40);
             gs.mShowBatteryGraph = pref.getBoolean(prefix+"IncludeBattery", true);
+            gs.mShowBatteryCurrentInstant = pref.getBoolean(prefix+"IncludeBatteryCurrentInstant", false);
+            gs.mShowBatteryCurrentAvg = pref.getBoolean(prefix+"IncludeBatteryCurrentAvg", false);
+            gs.mShowBatteryEnergy = pref.getBoolean(prefix+"IncludeBatteryEnergy", false);
             gs.mShowTempGraph = pref.getBoolean(prefix+"IncludeTemp", false);
             gs.mTempCelsius = pref.getString(prefix+"TempUnits", "C").toLowerCase().equals("c");
             gs.mNumHours = Integer.parseInt(pref.getString(prefix+"NumHours", Integer.toString(48)));
@@ -111,6 +120,9 @@ public class Settings {
                 .putInt(prefix+"GraphWidth", mGraphWidth)
                 .putInt(prefix+"GraphHeight", mGraphHeight)
                 .putBoolean(pref+"IncludeBattery", mShowBatteryGraph)
+                .putBoolean(prefix+"IncludeBatteryCurrentInstant", mShowBatteryCurrentInstant)
+                .putBoolean(prefix+"IncludeBatteryCurrentAvg", mShowBatteryCurrentAvg)
+                .putBoolean(prefix+"IncludeBatteryEnergy", mShowBatteryEnergy)
                 .putBoolean(prefix+"IncludeTemp", mShowTempGraph)
                 .putString(prefix+"TempUnits", mTempCelsius ? "C" : "F")
                 .putString(prefix+"NumHours", Integer.toString(mNumHours))

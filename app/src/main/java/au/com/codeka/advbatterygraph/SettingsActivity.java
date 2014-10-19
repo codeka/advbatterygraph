@@ -13,6 +13,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
@@ -230,6 +231,11 @@ public class SettingsActivity extends PreferenceActivity
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.battery_settings);
+
+            // battery charge is only available on Android L (API level 21)+.
+            //if (Build.VERSION >= Build.VERSION_CODES.L) {
+                
+            //}
         }
 
         @Override
