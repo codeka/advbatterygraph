@@ -337,8 +337,14 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         cal.setTime(new Date());
 
         BatteryStatus status = history.get(0);
-        points.add(new GraphPoint(x, 2 + height - (height * status.getChargeFraction()),
-                getColourForCharge(status.getChargeFraction(), baseColour)));
+        float y = 2 + height - (height * status.getChargeFraction());
+        if (y < 0 ) {
+            y = 0;
+        }
+       if (y >= height) {
+           y = height - 1;
+       }
+        points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction(), baseColour)));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
             cal.add(Calendar.MINUTE, -1);
