@@ -2,34 +2,34 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
   <PreferenceCategory android:title="Graph Size">
     <CheckBoxPreference
-        android:key="au.com.codeka.advbatterygraph.AutoGraph"
+        android:key="au.com.codeka.advbatterygraph.(%d).AutoGraph"
         android:disableDependentsState="true"
         android:title="Auto size graph"
         android:summary="Calculate size of the graph automatically (doesn't always work well, due to limitations of the widget system)" />
     <au.com.codeka.advbatterygraph.EditTextIntegerPreference
-        android:key="au.com.codeka.advbatterygraph.GraphWidth"
+        android:key="au.com.codeka.advbatterygraph.(%d).GraphWidth"
         android:numeric="integer"
         android:inputType="number"
         android:title="Width"
         android:summary="Width of the graph"
-        android:dependency="au.com.codeka.advbatterygraph.AutoGraph" />
+        android:dependency="au.com.codeka.advbatterygraph.(%d).AutoGraph" />
     <au.com.codeka.advbatterygraph.EditTextIntegerPreference
-        android:key="au.com.codeka.advbatterygraph.GraphHeight"
+        android:key="au.com.codeka.advbatterygraph.(%d).GraphHeight"
         android:numeric="integer"
         android:inputType="number"
         android:title="Height"
         android:summary="Height of the graph"
-        android:dependency="au.com.codeka.advbatterygraph.AutoGraph" />
-    <ListPreference android:key="au.com.codeka.advbatterygraph.NumHours"
+        android:dependency="au.com.codeka.advbatterygraph.(%d).AutoGraph" />
+    <ListPreference android:key="au.com.codeka.advbatterygraph.(%d).NumHours"
                     android:title="History Length"
                     android:entries="@array/history_length_display"
                     android:entryValues="@array/history_length_values" />
   </PreferenceCategory>
   <PreferenceCategory android:title="Appearance">
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.ShowTime"
+    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowTime"
                         android:title="Show time indicators" />
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.ShowTimeLines"
+    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowTimeLines"
                         android:title="Include time markers"
-                        android:dependency="au.com.codeka.advbatterygraph.ShowTime" />
+                        android:dependency="au.com.codeka.advbatterygraph.(%d).ShowTime" />
   </PreferenceCategory>
 </PreferenceScreen>

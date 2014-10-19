@@ -39,7 +39,7 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         BatteryStatus.save(context, status);
 
         // Notify the widget to update itself
-        BatteryGraphWidgetProvider.notifyRefresh(context);
+        BatteryGraphWidgetProvider.notifyRefresh(context, null);
 
         // if we have to display a notification, do it now
         new Notifier().handleNotifications(context, 0, percent);

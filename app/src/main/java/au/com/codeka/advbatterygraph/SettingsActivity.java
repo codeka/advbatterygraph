@@ -3,21 +3,27 @@ package au.com.codeka.advbatterygraph;
 import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
 
 import android.app.Fragment;
+import android.appwidget.AppWidgetManager;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.preference.ListPreference;
+import android.preference.Preference;
 import android.preference.PreferenceActivity;
+import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
 import android.support.v4.content.FileProvider;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
 import android.view.LayoutInflater;
@@ -58,6 +64,15 @@ public class SettingsActivity extends PreferenceActivity
     @Override
     public void onBuildHeaders(List<PreferenceActivity.Header> target) {
         loadHeadersFromResource(R.xml.settings_headers, target);
+        for (int i = 0; i < target.size(); i++) {
+            PreferenceActivity.Header header = target.get(i);
+            if (header.fragmentArguments == null) {
+                header.fragmentArguments = new Bundle();
+            }
+            header.fragmentArguments.putInt(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                    getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID));
+        }
+
         if (!watchConnection.isConnected()) {
             // if we're not connected to a watch, don't show the watch headings
             for (PreferenceActivity.Header header : target) {
@@ -83,7 +98,9 @@ public class SettingsActivity extends PreferenceActivity
      */
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        BatteryGraphWidgetProvider.notifyRefresh(this);
+        BatteryGraphWidgetProvider.notifyRefresh(this, new int[]{
+                getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID)
+        });
     }
 
     /**
@@ -91,6 +108,70 @@ public class SettingsActivity extends PreferenceActivity
      */
     public static abstract class BasePreferenceFragment extends PreferenceFragment
             implements SharedPreferences.OnSharedPreferenceChangeListener {
+        protected int mAppWidgetId;
+
+        @Override
+        public void onCreate(Bundle savedInstanceState) {
+            super.onCreate(savedInstanceState);
+            mAppWidgetId = getArguments().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID);
+        }
+
+        protected String getPrefix() {
+            if (mAppWidgetId == 0) {
+                return Settings.PREF_PREFIX;
+            } else {
+                return Settings.PREF_PREFIX + "(" + mAppWidgetId + ").";
+            }
+        }
+
+        @Override
+        public void addPreferencesFromResource(int resourceId) {
+            super.addPreferencesFromResource(resourceId);
+            updateKeys(getPreferenceScreen());
+        }
+
+        private void updateKeys(PreferenceGroup parent) {
+            for (int i = 0; i < parent.getPreferenceCount(); i++) {
+                Preference pref = parent.getPreference(i);
+                boolean changed = false;
+                if (pref.getKey() != null && pref.getKey().contains("%d")) {
+                    pref.setKey(String.format(pref.getKey(), mAppWidgetId));
+                    changed = true;
+                }
+                if (pref.getDependency() != null && pref.getDependency().contains("%d")) {
+                    pref.setDependency(String.format(pref.getDependency(), mAppWidgetId));
+                    changed = true;
+                }
+                if (changed) {
+                    reloadPreference(pref);
+                }
+                if (pref instanceof PreferenceGroup) {
+                    updateKeys((PreferenceGroup) pref);
+                }
+            }
+        }
+
+        /**
+         * This is kind of a dumb way to cause a preference to reload itself after changing one of
+         * its properties (such as 'Key').
+         *
+         * The "correct" solution to this problem would be to dynamically generate all my preference
+         * instances with the correct key to begin with, but that's ridiculously tedious.
+         */
+        private void reloadPreference(Preference pref) {
+            Class cls = pref.getClass();
+            while(cls != Preference.class) {
+                try {
+                    Method m = cls.getDeclaredMethod("onSetInitialValue",
+                            boolean.class, Object.class);
+                    m.setAccessible(true);
+                    m.invoke(pref, true, null);
+                    break;
+               } catch (Exception e) { }
+                cls = cls.getSuperclass();
+            }
+        }
+
         @Override
         public void onStart() {
             super.onStart();
@@ -121,13 +202,13 @@ public class SettingsActivity extends PreferenceActivity
 
         @Override
         protected void refreshSummaries() {
-            EditTextIntegerPreference intpref = (EditTextIntegerPreference) findPreference(Settings.PREF_PREFIX+"GraphWidth");
+            EditTextIntegerPreference intpref = (EditTextIntegerPreference) findPreference(getPrefix()+"GraphWidth");
             intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
 
-            intpref = (EditTextIntegerPreference) findPreference(Settings.PREF_PREFIX+"GraphHeight");
+            intpref = (EditTextIntegerPreference) findPreference(getPrefix()+"GraphHeight");
             intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
 
-            ListPreference listpref = (ListPreference) findPreference(Settings.PREF_PREFIX+"NumHours");
+            ListPreference listpref = (ListPreference) findPreference(getPrefix()+"NumHours");
             listpref.setSummary(listpref.getEntry());
         }
     }

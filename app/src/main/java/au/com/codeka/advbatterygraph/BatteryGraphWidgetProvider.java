@@ -1,9 +1,11 @@
 package au.com.codeka.advbatterygraph;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.TreeMap;
 
 import android.app.AlarmManager;
 import android.app.PendingIntent;
@@ -21,6 +23,7 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -28,8 +31,7 @@ import android.widget.RemoteViews;
  * This is the widget provider which renders the actual widget.
  */
 public class BatteryGraphWidgetProvider extends AppWidgetProvider {
-    private RemoteViews mRemoteViews;
-    private ComponentName mComponentName;
+    private TreeMap<Integer, RemoteViews> mRemoteViews;
     private WatchConnection watchConnection = new WatchConnection();
 
     private float mPixelDensity;
@@ -41,9 +43,10 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
      * You can call this to send a notification to the graph widget to update
      * itself.
      */
-    public static void notifyRefresh(Context context) {
+    public static void notifyRefresh(Context context, @Nullable int[] appWidgetIds) {
         Intent i = new Intent(context, BatteryGraphWidgetProvider.class);
         i.setAction(BatteryGraphWidgetProvider.CUSTOM_REFRESH_ACTION);
+        i.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
         context.sendBroadcast(i);
     }
 
@@ -54,10 +57,25 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     @Override
     public void onReceive(Context context, Intent intent) {
         try {
+            int[] appWidgetIds = null;
+            Bundle extras = intent.getExtras();
+            if (extras != null) {
+                appWidgetIds = extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS);
+            }
+            if (appWidgetIds == null) {
+                appWidgetIds = AppWidgetManager.getInstance(context).getAppWidgetIds(
+                        new ComponentName(context, BatteryGraphWidgetProvider.class));
+            }
+
             mSettings = Settings.get(context);
-            mPixelDensity = context.getResources().getDisplayMetrics().density;
-            mRemoteViews = new RemoteViews(context.getPackageName(), R.layout.widget);
-            mComponentName = new ComponentName(context, BatteryGraphWidgetProvider.class);
+            if (mRemoteViews == null) {
+                mPixelDensity = context.getResources().getDisplayMetrics().density;
+                mRemoteViews = new TreeMap<Integer, RemoteViews>();
+                for (int i = 0; i < appWidgetIds.length; i++) {
+                    mRemoteViews.put(appWidgetIds[i], new RemoteViews(context.getPackageName(),
+                            R.layout.widget));
+                }
+            }
 
             if (mSettings.monitorWatch()) {
                 watchConnection.setup(context, null);
@@ -67,17 +85,17 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             }
 
             if (intent.getAction().equals(CUSTOM_REFRESH_ACTION)) {
-                int[] appWidgetIds = null;
-                Bundle extras = intent.getExtras();
-                if (extras != null) {
-                    appWidgetIds = extras.getIntArray(AppWidgetManager.EXTRA_APPWIDGET_IDS);
-                }
                 refreshGraph(context, appWidgetIds);
             } else {
                 super.onReceive(context, intent);
             }
 
-            AppWidgetManager.getInstance(context).updateAppWidget(mComponentName, mRemoteViews); 
+            if (appWidgetIds != null) {
+                for (int i = 0; i < appWidgetIds.length; i++) {
+                    AppWidgetManager.getInstance(context).updateAppWidget(
+                            appWidgetIds[i], mRemoteViews.get(appWidgetIds[i]));
+                }
+            }
         } catch(Exception e) {
             Log.e("Battery Graph", "Unhandled exception!", e);
         }
@@ -94,10 +112,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     @Override
     public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
                                           int appWidgetId, Bundle newOptions) {
-        if (mSettings.autoGraphSize()) {
-            mSettings.setGraphWidth(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH));
-            mSettings.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
-            mSettings.save(context);
+        Settings.GraphSettings gs = mSettings.getGraphSettings(appWidgetId);
+        if (gs.autoGraphSize()) {
+            gs.setGraphWidth(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH));
+            gs.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
+            gs.save(context);
         }
 
         refreshGraph(context, new int[] { appWidgetId });
@@ -121,22 +140,28 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
 
     private void refreshGraph(Context context, int[] appWidgetIds) {
-        if (appWidgetIds != null) {
-            Intent intent = new Intent(context, SettingsActivity.class);
-            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, appWidgetIds);
-            PendingIntent pendingIntent = PendingIntent.getActivity(context, 0, intent,
-                    PendingIntent.FLAG_UPDATE_CURRENT);
-            mRemoteViews.setOnClickPendingIntent(R.id.image, pendingIntent);
-        }
+        for (int i = 0; i < appWidgetIds.length; i++) {
+            int appWidgetId = appWidgetIds[i];
 
-        int numMinutes = mSettings.getNumHours() * 60;
-        Bitmap bmp = renderGraph(context, numMinutes);
-        mRemoteViews.setImageViewBitmap(R.id.image, bmp);
+            Intent intent = new Intent(context, SettingsActivity.class);
+            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+            intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+            PendingIntent pendingIntent = PendingIntent.getActivity(context, appWidgetId, intent,
+                    PendingIntent.FLAG_CANCEL_CURRENT);
+            mRemoteViews.get(appWidgetId).setOnClickPendingIntent(R.id.image, pendingIntent);
+
+            Settings.GraphSettings graphSettings = mSettings.getGraphSettings(appWidgetId);
+            int numMinutes = graphSettings.getNumHours() * 60;
+            Log.i("DEAN", String.format("Refreshing %d hours for graph %d", numMinutes / 60, appWidgetId));
+            Bitmap bmp = renderGraph(context, graphSettings, numMinutes);
+            mRemoteViews.get(appWidgetId).setImageViewBitmap(R.id.image, bmp);
+        }
     }
 
-    private Bitmap renderGraph(Context context, int numMinutes) {
-        int width = (int)(mSettings.getGraphWidth() * mPixelDensity);
-        int height = (int)(mSettings.getGraphHeight() * mPixelDensity);
+    private Bitmap renderGraph(Context context, Settings.GraphSettings graphSettings,
+                               int numMinutes) {
+        int width = (int)(graphSettings.getGraphWidth() * mPixelDensity);
+        int height = (int)(graphSettings.getGraphHeight() * mPixelDensity);
         if (width == 0 || height == 0) {
             return null;
         }
@@ -145,15 +170,15 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         Canvas canvas = new Canvas(bmp);
 
         int graphHeight = height;
-        if (mSettings.showTimeScale()) {
+        if (graphSettings.showTimeScale()) {
             graphHeight -= 10 * mPixelDensity;
         }
 
         List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(context, 0,
-                mSettings.getNumHours());
+                graphSettings.getNumHours());
         List<BatteryStatus> watchHistory;
         if (mSettings.monitorWatch()) {
-            watchHistory = BatteryStatus.getHistory(context, 1, mSettings.getNumHours());
+            watchHistory = BatteryStatus.getHistory(context, 1, graphSettings.getNumHours());
         } else {
             watchHistory = new ArrayList<BatteryStatus>();
         }
@@ -165,15 +190,16 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         List<GraphPoint> watchChargePoints = renderChargeGraph(watchHistory, numMinutes, width,
                 graphHeight, Color.argb(200, 0x00, 0xba, 0xff));
 
-        if (mSettings.showTemperatureGraph()) {
+        if (graphSettings.showTemperatureGraph()) {
             numGraphsShowing ++;
             tempPoints = renderTempGraph(batteryHistory, numMinutes, width, graphHeight);
         }
         if (watchChargePoints.size() > 0) {
             numGraphsShowing++;
         }
-        if (mSettings.showTimeScale()) {
-            showTimeScale(canvas, width, height, numMinutes, numGraphsShowing, mSettings.showTimeLines());
+        if (graphSettings.showTimeScale()) {
+            showTimeScale(canvas, width, height, numMinutes, numGraphsShowing,
+                    graphSettings.showTimeLines());
         }
 
         if (tempPoints != null) {
@@ -196,7 +222,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         if (watchHistory.size() > 0) {
             text = String.format("P:%s W:%d%%", text, (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
         }
-        if (mSettings.showTemperatureGraph()) {
+        if (graphSettings.showTemperatureGraph()) {
             text = String.format("%.1f° - ", batteryHistory.get(0).getBatteryTemp()) + text;
         }
         Paint paint = new Paint();

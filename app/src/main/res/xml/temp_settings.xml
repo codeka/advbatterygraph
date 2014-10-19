@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
   <PreferenceCategory android:title="Temperature Graph">
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.IncludeTemp"
+    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).IncludeTemp"
                         android:title="Show Temperature"
                         android:summary="Include a graph of battery temperature." />
   </PreferenceCategory>
