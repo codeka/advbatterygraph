@@ -341,9 +341,9 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         if (y < 0 ) {
             y = 0;
         }
-       if (y >= height) {
-           y = height - 1;
-       }
+        if (y >= height) {
+            y = height - 1;
+        }
         points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction(), baseColour)));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
@@ -354,8 +354,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 j++;
             }
             status = history.get(j);
-            float y = 2 + height - (height * status.getChargeFraction());
-            if (y > 0) {
+            y = 2 + height - (height * status.getChargeFraction());
+            if (y > 0 && y < height) {
               points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction(), baseColour)));
             }
         }
