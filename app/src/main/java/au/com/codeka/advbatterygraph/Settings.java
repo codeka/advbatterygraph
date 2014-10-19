@@ -19,6 +19,12 @@ public class Settings {
     public boolean monitorWatch() { return mMonitorWatch; }
 
     public GraphSettings getGraphSettings(int appWidgetId) {
+        String prefix = String.format("%s(%d).", PREF_PREFIX, appWidgetId);
+        if (!mPreferences.contains(prefix + "AutoGraph")) {
+            // if we don't have settings for this graph, copy over the 'default' preferences.
+            GraphSettings gs = GraphSettings.get(mPreferences, PREF_PREFIX);
+            gs.save(mPreferences, prefix);
+        }
         return GraphSettings.get(mPreferences, String.format("%s(%d).", PREF_PREFIX, appWidgetId));
     }
 
@@ -34,7 +40,7 @@ public class Settings {
     public void save(Context context) {
         SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
         pref.edit()
-            .putBoolean(PREF_PREFIX+"MonitorWatch", mMonitorWatch)
+            .putBoolean(PREF_PREFIX + "MonitorWatch", mMonitorWatch)
             .apply();
     }
 
@@ -88,15 +94,18 @@ public class Settings {
         }
 
         public void save(Context context) {
-            SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
+            save(PreferenceManager.getDefaultSharedPreferences(context), mPrefix);
+        }
+
+        public void save(SharedPreferences pref, String prefix) {
             pref.edit()
-                .putBoolean(mPrefix+"AutoGraph", mAutoGraphSize)
-                .putInt(mPrefix+"GraphWidth", mGraphWidth)
-                .putInt(mPrefix+"GraphHeight", mGraphHeight)
-                .putBoolean(mPrefix+"IncludeTemp", mShowTempGraph)
-                .putString(mPrefix+"NumHours", Integer.toString(mNumHours))
-                .putBoolean(mPrefix+"ShowTime", mShowTimeScale)
-                .putBoolean(mPrefix+"ShowTimeLines", mShowTimeLines)
+                .putBoolean(prefix+"AutoGraph", mAutoGraphSize)
+                .putInt(prefix+"GraphWidth", mGraphWidth)
+                .putInt(prefix+"GraphHeight", mGraphHeight)
+                .putBoolean(prefix+"IncludeTemp", mShowTempGraph)
+                .putString(prefix+"NumHours", Integer.toString(mNumHours))
+                .putBoolean(prefix+"ShowTime", mShowTimeScale)
+                .putBoolean(prefix+"ShowTimeLines", mShowTimeLines)
                 .apply();
         }
     }
