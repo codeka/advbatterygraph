@@ -184,7 +184,7 @@ public class BatteryStatus {
         private static Object sLock = new Object();
 
         public Store(Context context) {
-            super(context, "battery.db", null, 6);
+            super(context, "battery.db", null, 7);
         }
 
         /**
@@ -227,6 +227,12 @@ public class BatteryStatus {
                 db.execSQL("ALTER TABLE battery_history ADD COLUMN energy_milliwatthours REAL");
                 db.execSQL("UPDATE battery_history SET current_instant_milliamperes=0,"
                         + " current_avg_milliamperes=0, energy_milliwatthours = 0");
+            }
+            if (oldVersion <= 6) {
+                db.execSQL("UPDATE battery_history SET"
+                        +" current_instant_milliamperes=current_instant_milliamperes / 1000,"
+                        +" current_avg_milliamperes=current_avg_milliamperes / 1000,"
+                        +" energy_milliwatthours = energy_milliwatthours / 1000");
             }
         }
 

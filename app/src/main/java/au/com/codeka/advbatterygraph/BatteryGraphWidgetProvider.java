@@ -255,22 +255,22 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
 
         if (tempPoints != null) {
-            drawGraphBackground(tempPoints, canvas, width, graphHeight);
+            drawGraphBackground(tempPoints, canvas, width, graphHeight, graphHeight);
         }
         if (batteryCurrentInstantPoints != null) {
-            drawGraphBackground(batteryCurrentInstantPoints, canvas, width, graphHeight);
+            drawGraphBackground(batteryCurrentInstantPoints, canvas, width, graphHeight, graphHeight / 2);
         }
         if (batteryCurrentAvgPoints != null) {
-            drawGraphBackground(batteryCurrentAvgPoints, canvas, width, graphHeight);
+            drawGraphBackground(batteryCurrentAvgPoints, canvas, width, graphHeight, graphHeight / 2);
         }
         if (batteryEnergyPoints != null) {
-            drawGraphBackground(batteryEnergyPoints, canvas, width, graphHeight);
+            drawGraphBackground(batteryEnergyPoints, canvas, width, graphHeight, graphHeight);
         }
         if (watchChargePoints.size() > 0) {
-            drawGraphBackground(watchChargePoints, canvas, width, graphHeight);
+            drawGraphBackground(watchChargePoints, canvas, width, graphHeight, graphHeight);
         }
         if (batteryChargePoints != null) {
-            drawGraphBackground(batteryChargePoints, canvas, width, graphHeight);
+            drawGraphBackground(batteryChargePoints, canvas, width, graphHeight, graphHeight);
         }
 
         if (tempPoints != null) {
@@ -320,7 +320,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
 
         if (graphSettings.showBatteryCurrentInstant() && batteryHistory.size() > 0) {
-            String curr = String.format("%d mA", (int) batteryHistory.get(0).getBatteryCurrentInstant());
+            String curr = String.format("%.2f mA (inst)", batteryHistory.get(0).getBatteryCurrentInstant());
             if (text != "") {
                 text += " - ";
             }
@@ -328,7 +328,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
 
         if (graphSettings.showBatteryCurrentAvg() && batteryHistory.size() > 0) {
-            String curr = String.format("%d mA", (int) batteryHistory.get(0).getBatteryCurrentAvg());
+            String curr = String.format("%d mA (avg)", (int) batteryHistory.get(0).getBatteryCurrentAvg());
             if (text != "") {
                 text += " - ";
             }
@@ -504,7 +504,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
 
     private float getFractionHeight(float value, float maxValue, float height) {
-        float fractionHeight = (value / maxValue) * (height / 2.0f) + (height / 2.0f);
+        float fractionHeight = (height / 2.0f) - (value / maxValue) * (height / 2.0f);
         if (fractionHeight < 0) {
             return 0;
         }
@@ -589,14 +589,14 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         return (temp - min) / range;
     }
 
-    private void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width, int height) {
+    private void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width, int height, int zeroValue) {
         Path path = new Path();
-        path.moveTo(width, height);
+        path.moveTo(width, zeroValue);
         for (GraphPoint pt : points) {
             path.lineTo(pt.x, pt.y);
         }
-        path.lineTo(0, height);
-        path.lineTo(width, height);
+        path.lineTo(0, zeroValue);
+        path.lineTo(width, zeroValue);
         Paint paint = new Paint();
         paint.setAntiAlias(true);
         paint.setARGB(128, 0, 0, 0);

@@ -29,9 +29,18 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
         long currentAvgMicroAmperes = 0;
         long energyMicroWattHours = 0;
         try {
-            currentInstantMicroAmperes = new BatteryManager().getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
-            currentAvgMicroAmperes = new BatteryManager().getLongProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE);
-            energyMicroWattHours = new BatteryManager().getLongProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
+            currentInstantMicroAmperes = new BatteryManager().getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_NOW);
+            if (currentInstantMicroAmperes == Long.MIN_VALUE) {
+                currentInstantMicroAmperes = 0;
+            }
+            currentAvgMicroAmperes = new BatteryManager().getIntProperty(BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE);
+            if (currentAvgMicroAmperes == Long.MIN_VALUE) {
+                currentAvgMicroAmperes = 0;
+            }
+            energyMicroWattHours = new BatteryManager().getIntProperty(BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER);
+            if (energyMicroWattHours == Long.MIN_VALUE) {
+                energyMicroWattHours = 0;
+            }
         } catch(Throwable e) {
             // probably not supported on this device, ignore
         }
@@ -48,7 +57,7 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
                                                 .batteryTemp(temperature / 10.0f)
                                                 .batteryCurrentInstant((float) currentInstantMicroAmperes / 1000.0f)
                                                 .batteryCurrentAvg((float) currentAvgMicroAmperes / 1000.0f)
-                                                .batteryEnergy((float) energyMicroWattHours / 1000.0f)
+                                                .batteryEnergy((float) energyMicroWattHours / 1000000.0f)
                                                 .build();
         BatteryStatus.save(context, status);
 
