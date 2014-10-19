@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <PreferenceCategory android:title="Watch Graph">
-        <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.MonitorWatch"
+        <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).IncludeWatchGraph"
             android:title="Show Watch Battery"
             android:summary="Include a graph of your watches battery level." />
     </PreferenceCategory>

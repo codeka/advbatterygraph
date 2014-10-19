@@ -78,7 +78,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 }
             }
 
-            if (mSettings.monitorWatch()) {
+            if (mSettings.monitorWatch(appWidgetIds)) {
                 watchConnection.setup(context, null);
                 watchConnection.start();
                 watchConnection.sendMessage(
@@ -177,7 +177,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(
                 context, 0, graphSettings.getNumHours());
         List<BatteryStatus> watchHistory;
-        if (mSettings.monitorWatch()) {
+        if (graphSettings.showWatchGraph()) {
             watchHistory = BatteryStatus.getHistory(context, 1, graphSettings.getNumHours());
         } else {
             watchHistory = new ArrayList<BatteryStatus>();
