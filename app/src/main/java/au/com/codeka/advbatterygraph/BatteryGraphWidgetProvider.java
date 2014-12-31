@@ -591,7 +591,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                                   int smoothness) {
         float value = history.get(position).getBatteryTemp();
         if (smoothness > 0) {
-            Log.i(TAG, "smoothness = " + smoothness + ", smoothing value [" + position + "]: " + value);
             int numValues = 1;
             for (int i = 0; i < smoothness; i++) {
                 int index = lastIndices.size() - (int) (i / pixelsPerMinute) - 1;
@@ -601,11 +600,9 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 float thisValue = history.get(lastIndices.get(index)).getBatteryTemp();
                 value += thisValue;
                 numValues ++;
-                Log.i(TAG, "history[" + lastIndices.get(index) + "] = " + thisValue);
             }
             value /= numValues;
         }
-        Log.i(TAG, "smoothed value: " + value);
         return value;
     }
 
