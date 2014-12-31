@@ -4,6 +4,9 @@
     <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).IncludeTemp"
                         android:title="Show Temperature"
                         android:summary="Include a graph of battery temperature." />
+    <au.com.codeka.advbatterygraph.SliderPreference
+        android:key="au.com.codeka.advbatterygraph.(%d).TempSmoothness"
+        android:title="Smoothness" />
     <ListPreference android:key="au.com.codeka.advbatterygraph.(%d).TempUnits"
                     android:title="Units"
                     android:defaultValue="C"

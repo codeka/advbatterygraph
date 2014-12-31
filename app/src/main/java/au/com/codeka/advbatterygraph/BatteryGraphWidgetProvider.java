@@ -199,7 +199,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
         if (graphSettings.showTemperatureGraph()) {
             numGraphsShowing ++;
-            tempPoints = renderTempGraph(batteryHistory, numMinutes, width, graphHeight);
+            tempPoints = renderTempGraph(batteryHistory, numMinutes, width, graphHeight,
+                    graphSettings.tempSmoothness());
         }
         if (graphSettings.showBatteryCurrentInstant()) {
             batteryCurrentInstantPoints = renderGraph(batteryHistory, numMinutes,  width, height,
@@ -527,7 +528,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                 Color.blue(colour));
     }
 
-    private List<GraphPoint> renderTempGraph(List<BatteryStatus> history, int numMinutes, int width, int height) {
+    private List<GraphPoint> renderTempGraph(List<BatteryStatus> history, int numMinutes,
+                                             int width, int height, int smoothness) {
         height -= 4;
         ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
         if (history.size() < 2) {
@@ -550,7 +552,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
         avgTemp /= history.size();
 
-
         // if the range is small (< 8 degrees) we'll expand it a bit
         if (maxTemp - minTemp < 8.0f) {
             minTemp = avgTemp - 4.0f;
@@ -563,8 +564,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
 
-        BatteryStatus status = history.get(0);
-        points.add(new GraphPoint(x, 2 + height - (height * getTempFraction(status.getBatteryTemp(), minTemp, maxTemp)), Color.BLUE));
+        ArrayList<Integer> lastIndices = new ArrayList<>();
+        float temp = getSmoothedTemp(history, 0, lastIndices, pixelsPerMinute, smoothness);
+        lastIndices.add(0);
+        float y = 2 + height - (height * getTempFraction(temp, minTemp, maxTemp));
+        points.add(new GraphPoint(x, y, Color.BLUE));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
             x -= pixelsPerMinute;
             cal.add(Calendar.MINUTE, -1);
@@ -573,11 +577,36 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             while (j < history.size() - 1 && history.get(j).getDate().after(dt)) {
                 j++;
             }
-            status = history.get(j);
-            points.add(new GraphPoint(x, 2 + height - (height * getTempFraction(status.getBatteryTemp(), minTemp, maxTemp)), Color.BLUE));
+            temp = getSmoothedTemp(history, j, lastIndices, pixelsPerMinute, smoothness);
+            lastIndices.add(j);
+            y = 2 + height - (height * getTempFraction(temp, minTemp, maxTemp));
+            points.add(new GraphPoint(x, y, Color.BLUE));
         }
 
         return points;
+    }
+
+    private float getSmoothedTemp(List<BatteryStatus> history, int position,
+                                  ArrayList<Integer> lastIndices, float pixelsPerMinute,
+                                  int smoothness) {
+        float value = history.get(position).getBatteryTemp();
+        if (smoothness > 0) {
+            Log.i(TAG, "smoothness = " + smoothness + ", smoothing value [" + position + "]: " + value);
+            int numValues = 1;
+            for (int i = 0; i < smoothness; i++) {
+                int index = lastIndices.size() - (int) (i / pixelsPerMinute) - 1;
+                if (index < 0) {
+                    break;
+                }
+                float thisValue = history.get(lastIndices.get(index)).getBatteryTemp();
+                value += thisValue;
+                numValues ++;
+                Log.i(TAG, "history[" + lastIndices.get(index) + "] = " + thisValue);
+            }
+            value /= numValues;
+        }
+        Log.i(TAG, "smoothed value: " + value);
+        return value;
     }
 
     private static float getTempFraction(float temp, float min, float max) {
@@ -589,7 +618,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         return (temp - min) / range;
     }
 
-    private void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width, int height, int zeroValue) {
+    private void drawGraphBackground(List<GraphPoint> points, Canvas canvas, int width,
+                                     int height, int zeroValue) {
         Path path = new Path();
         path.moveTo(width, zeroValue);
         for (GraphPoint pt : points) {
