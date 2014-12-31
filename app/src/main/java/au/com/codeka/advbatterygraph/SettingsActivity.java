@@ -239,7 +239,7 @@ public class SettingsActivity extends PreferenceActivity
             Preference batteryCurrentInstantPref = findPreference(getPrefix() + "IncludeBatteryCurrentInstant");
             Preference batteryCurrentAvgPref = findPreference(getPrefix() + "IncludeBatteryCurrentAvg");
             Preference batteryEnergyPref = findPreference(getPrefix() + "IncludeBatteryEnergy");
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.L) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                 BatteryManager batteryManager = (BatteryManager) getActivity()
                         .getSystemService(Context.BATTERY_SERVICE);
                 batteryCurrentInstantPref.setEnabled(batteryManager.getIntProperty(
