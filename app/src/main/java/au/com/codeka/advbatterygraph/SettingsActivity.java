@@ -287,15 +287,6 @@ public class SettingsActivity extends PreferenceActivity
         protected void refreshSummaries() {
             ListPreference listpref = (ListPreference) findPreference(getPrefix()+"TempUnits");
             listpref.setSummary(listpref.getEntry());
-
-            SliderPreference sliderPreference =
-                (SliderPreference) findPreference(getPrefix()+"TempSmoothness");
-            if (sliderPreference.getValue() <= 0.1) {
-                sliderPreference.setSummary("Not smoothed");
-            } else {
-                int smoothness = (int) (sliderPreference.getValue() * 20) * 5;
-                sliderPreference.setSummary("Smoothness: " + smoothness + "%");
-            }
         }
     }
 

@@ -200,7 +200,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         if (graphSettings.showTemperatureGraph()) {
             numGraphsShowing ++;
             tempPoints = renderTempGraph(batteryHistory, numMinutes, width, graphHeight,
-                    graphSettings.tempSmoothness());
+                    graphSettings.smoothTemp() ? 20 : 0);
         }
         if (graphSettings.showBatteryCurrentInstant()) {
             final float scale = graphSettings.invertBatteryCurrentInstant() ? -1.0f : 1.0f;

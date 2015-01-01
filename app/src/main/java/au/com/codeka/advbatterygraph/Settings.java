@@ -74,7 +74,7 @@ public class Settings {
         private boolean mShowBatteryCurrentAvg;
         private boolean mShowBatteryEnergy;
         private boolean mShowTempGraph;
-        private int mTempSmoothness;
+        private boolean mSmoothTemp;
         private boolean mTempCelsius;
         private int mNumHours;
         private boolean mShowTimeScale;
@@ -105,7 +105,7 @@ public class Settings {
             return mShowTempGraph;
         }
         public boolean tempInCelsius() { return mTempCelsius; }
-        public int tempSmoothness() { return mTempSmoothness; }
+        public boolean smoothTemp() { return mSmoothTemp; }
         public int getNumHours() {
             return mNumHours;
         }
@@ -130,8 +130,7 @@ public class Settings {
             gs.mShowBatteryCurrentAvg = pref.getBoolean(prefix + "IncludeBatteryCurrentAvg", false);
             gs.mShowBatteryEnergy = pref.getBoolean(prefix+"IncludeBatteryEnergy", false);
             gs.mShowTempGraph = pref.getBoolean(prefix+"IncludeTemp", false);
-            float smoothness = pref.getFloat(prefix+"TempSmoothness", 0.0f);
-            gs.mTempSmoothness = (int) (smoothness * 20);
+            gs.mSmoothTemp = pref.getBoolean(prefix+"SmoothTemp", false);
             gs.mTempCelsius = pref.getString(prefix+"TempUnits", "C").toLowerCase().equals("c");
             gs.mNumHours = Integer.parseInt(pref.getString(prefix + "NumHours", Integer.toString(48)));
             gs.mShowTimeScale = pref.getBoolean(prefix+"ShowTime", false);
