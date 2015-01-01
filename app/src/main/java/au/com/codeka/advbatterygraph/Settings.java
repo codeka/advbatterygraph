@@ -69,6 +69,8 @@ public class Settings {
         private boolean mShowWatchGraph;
         private boolean mShowBatteryGraph;
         private boolean mShowBatteryCurrentInstant;
+        private boolean mSmoothBatteryCurrentInstant;
+        private boolean mInvertBatteryCurrentInstant;
         private boolean mShowBatteryCurrentAvg;
         private boolean mShowBatteryEnergy;
         private boolean mShowTempGraph;
@@ -93,10 +95,10 @@ public class Settings {
             mGraphHeight = height;
         }
         public boolean showWatchGraph() { return mShowWatchGraph; }
-        public boolean showBatteryGraph() {
-            return mShowBatteryGraph;
-        }
+        public boolean showBatteryGraph() { return mShowBatteryGraph; }
         public boolean showBatteryCurrentInstant() { return mShowBatteryCurrentInstant; }
+        public boolean smoothBatteryCurrentInstant() { return mSmoothBatteryCurrentInstant; }
+        public boolean invertBatteryCurrentInstant() { return mInvertBatteryCurrentInstant; }
         public boolean showBatteryCurrentAvg() { return mShowBatteryCurrentAvg; }
         public boolean showBatteryEnergy() { return mShowBatteryEnergy; }
         public boolean showTemperatureGraph() {
@@ -123,6 +125,8 @@ public class Settings {
             gs.mShowWatchGraph = pref.getBoolean(prefix+"IncludeWatchGraph", true);
             gs.mShowBatteryGraph = pref.getBoolean(prefix+"IncludeBattery", true);
             gs.mShowBatteryCurrentInstant = pref.getBoolean(prefix + "IncludeBatteryCurrentInstant", false);
+            gs.mSmoothBatteryCurrentInstant = pref.getBoolean(prefix + "SmoothBatteryCurrentInstant", false);
+            gs.mInvertBatteryCurrentInstant = pref.getBoolean(prefix + "InvertBatteryCurrentInstant", false);
             gs.mShowBatteryCurrentAvg = pref.getBoolean(prefix + "IncludeBatteryCurrentAvg", false);
             gs.mShowBatteryEnergy = pref.getBoolean(prefix+"IncludeBatteryEnergy", false);
             gs.mShowTempGraph = pref.getBoolean(prefix+"IncludeTemp", false);

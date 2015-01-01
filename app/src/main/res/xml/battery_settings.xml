@@ -12,6 +12,16 @@
             android:title="Show graph"
             android:summary="Include a graph of instantaneous battery current in milliamperes."
             android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="au.com.codeka.advbatterygraph.(%d).SmoothBatteryCurrentInstant"
+            android:title="Smooth graph"
+            android:summary="Smooth the graph so it's not so noisy."
+            android:defaultValue="false" />
+        <CheckBoxPreference
+            android:key="au.com.codeka.advbatterygraph.(%d).InvertBatteryCurrentInstant"
+            android:title="Invert graph"
+            android:summary="Some devices return current that is the opposite of what you expect, use this to correct them."
+            android:defaultValue="false" />
     </PreferenceCategory>
     <PreferenceCategory android:title="Current (Average)">
         <CheckBoxPreference

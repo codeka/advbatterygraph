@@ -203,18 +203,20 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                     graphSettings.tempSmoothness());
         }
         if (graphSettings.showBatteryCurrentInstant()) {
+            final float scale = graphSettings.invertBatteryCurrentInstant() ? -1.0f : 1.0f;
+            final int smoothness = graphSettings.smoothBatteryCurrentInstant() ? 20 : 0;
             batteryCurrentInstantPoints = renderGraph(batteryHistory, numMinutes,  width, height,
                     new GraphCustomizer() {
                         @Override
                         public float getValue(BatteryStatus status) {
-                            return status.getBatteryCurrentInstant();
+                            return scale * status.getBatteryCurrentInstant();
                         }
 
                         @Override
                         public int getColor(float value, int height) {
                             return value >= 0.0f ? Color.GREEN : Color.RED;
                         }
-                    }, height / 2, 0);
+                    }, height / 2, 0, smoothness);
             numGraphsShowing ++;
         }
         if (graphSettings.showBatteryCurrentAvg()) {
@@ -229,10 +231,10 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                         public int getColor(float value, int height) {
                             return value >= 0.0f ? Color.GREEN : Color.RED;
                         }
-                    }, height / 2, 0);
+                    }, height / 2, 0, 0);
             numGraphsShowing ++;
         }
-        if (graphSettings.showBatteryCurrentInstant()) {
+        if (graphSettings.showBatteryEnergy()) {
             batteryEnergyPoints = renderGraph(batteryHistory, numMinutes,  width, height,
                     new GraphCustomizer() {
                         @Override
@@ -244,7 +246,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
                         public int getColor(float value, int thisHeight) {
                             return getColourForCharge((float) thisHeight / height, Color.GREEN);
                         }
-                    }, 0, 0);
+                    }, 0, 0, 0);
             numGraphsShowing ++;
         }
         if (watchChargePoints.size() > 0) {
@@ -459,7 +461,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     private List<GraphPoint> renderGraph(List<BatteryStatus> history, int numMinutes,
                                          int width, int height, GraphCustomizer customizer,
-                                         int zeroPoint, float maxValue) {
+                                         int zeroPoint, float maxValue, int smoothness) {
         height -= 4;
         ArrayList<GraphPoint> points = new ArrayList<GraphPoint>();
         if (history.size() < 2) {
@@ -469,8 +471,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
 
         if (maxValue == 0) {
-            for (BatteryStatus status : history) {
-                float currValue = Math.abs(customizer.getValue(status));
+            ArrayList<Integer> lastIndices = new ArrayList<>();
+            for (int i = 0; i < history.size(); i++) {
+                float currValue = Math.abs(getSmoothedValue(history, i, lastIndices, 1.0f,
+                        smoothness, customizer));
+                lastIndices.add(i);
                 if (currValue > maxValue) {
                     maxValue = currValue;
                 }
@@ -483,8 +488,9 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         Calendar cal = Calendar.getInstance();
         cal.setTime(new Date());
 
-        BatteryStatus status = history.get(0);
-        float value = customizer.getValue(status);
+        ArrayList<Integer> lastIndices = new ArrayList<>();
+        float value = getSmoothedValue(history, 0, lastIndices, pixelsPerMinute, smoothness, customizer);
+        lastIndices.add(0);
         float y = getFractionHeight(value, maxValue, height);
         points.add(new GraphPoint(x, y, customizer.getColor(value, (int) y)));
         for (int minute = 1, j = 1; minute < numMinutes; minute++) {
@@ -495,13 +501,33 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             while (j < history.size() - 1 && history.get(j).getDate().after(dt)) {
                 j++;
             }
-            status = history.get(j);
-            value = customizer.getValue(status);
+            value = getSmoothedValue(history, j, lastIndices, 1.0f, smoothness, customizer);
+            lastIndices.add(j);
             y = getFractionHeight(value, maxValue, height);
             points.add(new GraphPoint(x, y, customizer.getColor(value, (int) y)));
         }
 
         return points;
+    }
+
+    private float getSmoothedValue(List<BatteryStatus> history, int position,
+                                  ArrayList<Integer> lastIndices, float pixelsPerMinute,
+                                  int smoothness, GraphCustomizer customizer) {
+        float value = customizer.getValue(history.get(position));
+        if (smoothness > 0) {
+            int numValues = 1;
+            for (int i = 0; i < smoothness; i++) {
+                int index = lastIndices.size() - (int) (i / pixelsPerMinute) - 1;
+                if (index < 0) {
+                    break;
+                }
+                float thisValue = customizer.getValue(history.get(lastIndices.get(index)));
+                value += thisValue;
+                numValues ++;
+            }
+            value /= numValues;
+        }
+        return value;
     }
 
     private float getFractionHeight(float value, float maxValue, float height) {
