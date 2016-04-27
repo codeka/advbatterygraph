@@ -88,6 +88,12 @@ public class SettingsActivity extends PreferenceActivity
     }
   }
 
+  /** Sometimes these get returned as false. We'll just hack it to return true. */
+  @Override
+  protected boolean isValidFragment(String fragmentName) {
+    return true;
+  }
+
   private Runnable watchConnectedRunnable = new Runnable() {
     @Override
     public void run() {
