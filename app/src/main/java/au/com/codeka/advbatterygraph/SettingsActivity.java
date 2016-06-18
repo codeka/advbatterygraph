@@ -2,7 +2,6 @@ package au.com.codeka.advbatterygraph;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
@@ -20,7 +19,6 @@ import android.os.Bundle;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
-import android.preference.PreferenceCategory;
 import android.preference.PreferenceFragment;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
@@ -172,12 +170,12 @@ public class SettingsActivity extends PreferenceActivity
       Class cls = pref.getClass();
       while (cls != Preference.class) {
         try {
-          Method m = cls.getDeclaredMethod("onSetInitialValue",
-              boolean.class, Object.class);
+          Method m = cls.getDeclaredMethod("onSetInitialValue", boolean.class, Object.class);
           m.setAccessible(true);
           m.invoke(pref, true, null);
           break;
         } catch (Exception e) {
+          // Ignore.
         }
         cls = cls.getSuperclass();
       }
@@ -361,25 +359,25 @@ public class SettingsActivity extends PreferenceActivity
 
       int last = i;
       for (int j = i + 1; ; j++) {
-        String key = String.format("notification:%d:percent", j);
+        String key = String.format(Locale.US, "notification:%d:percent", j);
         if (prefs.getInt(key, -1) < 0) {
           break;
         }
 
         int percent = prefs.getInt(key, -1);
-        String dir = prefs.getString(String.format("notification:%d:direction", j), "");
-        String device = prefs.getString(String.format("notification:%d:device", j), "");
+        String dir = prefs.getString(String.format(Locale.US, "notification:%d:direction", j), "");
+        String device = prefs.getString(String.format(Locale.US, "notification:%d:device", j), "");
 
-        editor.putInt(String.format("notification:%d:percent", j - 1), percent);
-        editor.putString(String.format("notification:%d:direction", j - 1), dir);
-        editor.putString(String.format("notification:%d:device", i - 1), device);
+        editor.putInt(String.format(Locale.US, "notification:%d:percent", j - 1), percent);
+        editor.putString(String.format(Locale.US, "notification:%d:direction", j - 1), dir);
+        editor.putString(String.format(Locale.US, "notification:%d:device", i - 1), device);
         last = j;
       }
 
-      editor.remove(String.format("notification:%d:percent", last));
-      editor.remove(String.format("notification:%d:direction", last));
-      editor.remove(String.format("notification:%d:device", last));
-      editor.commit();
+      editor.remove(String.format(Locale.US, "notification:%d:percent", last));
+      editor.remove(String.format(Locale.US, "notification:%d:direction", last));
+      editor.remove(String.format(Locale.US, "notification:%d:device", last));
+      editor.apply();
     }
 
     private void refreshNotificationPrefs() {
@@ -388,18 +386,20 @@ public class SettingsActivity extends PreferenceActivity
 
       SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
       for (int i = 1; ; i++) {
-        String key = String.format("notification:%d:percent", i);
+        String key = String.format(Locale.US, "notification:%d:percent", i);
         if (prefs.getInt(key, -1) < 0) {
           break;
         }
 
         int percent = prefs.getInt(key, -1);
-        String dir = prefs.getString(String.format("notification:%d:direction", i), "");
-        String device = prefs.getString(String.format("notification:%d:device", i), "Phone");
+        String dir = prefs.getString(String.format(Locale.US, "notification:%d:direction", i), "");
+        String device =
+            prefs.getString(String.format(Locale.US, "notification:%d:device", i), "Phone");
 
         NotificationSettingDialog pref = new NotificationSettingDialog(getActivity());
-        pref.setKey(String.format("notification:%d", i));
-        pref.setTitle(String.format("%s %d%% and %s", device, percent, dir.toLowerCase()));
+        pref.setKey(String.format(Locale.US, "notification:%d", i));
+        pref.setTitle(
+            String.format(Locale.US, "%s %d%% and %s", device, percent, dir.toLowerCase()));
         pref.setDialogLayoutResource(R.layout.notification_pref);
         pref.setPositiveButtonText("Save");
         pref.setNegativeButtonText("Cancel");
@@ -417,12 +417,12 @@ public class SettingsActivity extends PreferenceActivity
   }
 
   public static class ExportFragment extends Fragment {
-    private View mView;
+    private View view;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle args) {
-      mView = inflater.inflate(R.layout.export_fragment, parent, false);
-      return mView;
+      view = inflater.inflate(R.layout.export_fragment, parent, false);
+      return view;
     }
 
     @Override
@@ -435,7 +435,6 @@ public class SettingsActivity extends PreferenceActivity
       new AsyncTask<Void, Void, Uri>() {
         @Override
         protected Uri doInBackground(Void... voids) {
-          FileProvider fileProvider = new FileProvider();
           File dir = new File(getActivity().getCacheDir(), "exports");
           if (!dir.exists()) {
             dir.mkdir();
@@ -447,15 +446,14 @@ public class SettingsActivity extends PreferenceActivity
           } catch (IOException e) {
             // TODO: handle error
           }
-          Uri contentUri = fileProvider.getUriForFile(getActivity(),
+          return FileProvider.getUriForFile(getActivity(),
               "au.com.codeka.advbatterygraph.exportprovider", exportFile);
-          return contentUri;
         }
 
         @Override
         protected void onPostExecute(Uri contentUri) {
-          mView.findViewById(R.id.progress).setVisibility(View.GONE);
-          ((TextView) mView.findViewById(R.id.label)).setText("Export complete!");
+          view.findViewById(R.id.progress).setVisibility(View.GONE);
+          ((TextView) view.findViewById(R.id.label)).setText("Export complete!");
 
           Intent shareIntent = new Intent();
           shareIntent.setAction(Intent.ACTION_SEND);
