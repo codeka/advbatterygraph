@@ -33,7 +33,6 @@ import android.widget.RemoteViews;
 public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   private static final String TAG = "BatteryGraphWidget";
   private TreeMap<Integer, RemoteViews> mRemoteViews;
-  private WatchConnection watchConnection = new WatchConnection();
 
   private float mPixelDensity;
   private Settings mSettings;
@@ -79,13 +78,15 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       }
 
       if (mSettings.monitorWatch(appWidgetIds)) {
-        watchConnection.setup(context, null);
-        watchConnection.start();
-        watchConnection.sendMessage(
+        if (!WatchConnection.i.isConnected()) {
+          WatchConnection.i.setup(context, null);
+          WatchConnection.i.start();
+        }
+        WatchConnection.i.sendMessage(
             new WatchConnection.Message("/advbatterygraph/Start", null));
       }
 
-      if (intent.getAction().equals(CUSTOM_REFRESH_ACTION)) {
+      if (CUSTOM_REFRESH_ACTION.equals(intent.getAction())) {
         refreshGraph(context, appWidgetIds);
       } else {
         super.onReceive(context, intent);

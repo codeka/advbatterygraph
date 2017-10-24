@@ -39,7 +39,6 @@ import android.widget.TextView;
 public class SettingsActivity extends PreferenceActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener {
   private static final String TAG = "SettingsActivity";
-  private WatchConnection watchConnection = new WatchConnection();
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -47,20 +46,19 @@ public class SettingsActivity extends PreferenceActivity
 
     PreferenceManager.getDefaultSharedPreferences(this)
         .registerOnSharedPreferenceChangeListener(this);
-    watchConnection.setup(this, watchConnectedRunnable);
+    WatchConnection.i.setup(this, watchConnectedRunnable);
   }
 
   @Override
   protected void onResume() {
     super.onResume();
-    watchConnection.start();
-    watchConnection.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
+    WatchConnection.i.start();
+    WatchConnection.i.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
   }
 
   @Override
   protected void onPause() {
     super.onPause();
-    watchConnection.stop();
   }
 
   @Override
@@ -75,7 +73,7 @@ public class SettingsActivity extends PreferenceActivity
           getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID));
     }
 
-    if (!watchConnection.isConnected()) {
+    if (!WatchConnection.i.isConnected()) {
       // if we're not connected to a watch, don't show the watch headings
       for (PreferenceActivity.Header header : target) {
         if (header.id == R.id.watch_settings_header) {

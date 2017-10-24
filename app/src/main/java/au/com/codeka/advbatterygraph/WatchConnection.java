@@ -2,6 +2,7 @@ package au.com.codeka.advbatterygraph;
 
 import android.content.Context;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
 
@@ -17,12 +18,20 @@ import java.util.ArrayList;
 /** Class that represents our connection to an Android Wear watch. */
 public class WatchConnection {
   private static final String TAG = WatchConnection.class.getSimpleName();
+  public static WatchConnection i = new WatchConnection();
+
   private GoogleApiClient googleApiClient;
   private boolean isConnected;
-  private ArrayList<Message> pendingMessages = new ArrayList<>();
-  private ArrayList<String> watchNodes = new ArrayList<>();
+  private final ArrayList<Message> pendingMessages;
+  private final ArrayList<String> watchNodes;
 
-  public void setup(Context context, @Nullable final Runnable onConnectedRunnable) {
+  private WatchConnection() {
+    isConnected = false;
+    pendingMessages = new ArrayList<>();
+    watchNodes = new ArrayList<>();
+  }
+
+  void setup(Context context, @Nullable final Runnable onConnectedRunnable) {
     if (googleApiClient != null) {
       // only need to do this once.
       if (isConnected && onConnectedRunnable != null) {
@@ -39,7 +48,7 @@ public class WatchConnection {
             Wearable.NodeApi.getConnectedNodes(googleApiClient).setResultCallback(
                 new ResultCallback<NodeApi.GetConnectedNodesResult>() {
                   @Override
-                  public void onResult(NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
+                  public void onResult(@NonNull NodeApi.GetConnectedNodesResult getConnectedNodesResult) {
                     for (Node node : getConnectedNodesResult.getNodes()) {
                       watchNodes.add(node.getId());
                     }
@@ -63,7 +72,7 @@ public class WatchConnection {
         })
         .addOnConnectionFailedListener(new GoogleApiClient.OnConnectionFailedListener() {
           @Override
-          public void onConnectionFailed(ConnectionResult result) {
+          public void onConnectionFailed(@NonNull ConnectionResult result) {
             Log.d(TAG, "onConnectionFailed: " + result);
             isConnected = false;
           }
@@ -72,19 +81,19 @@ public class WatchConnection {
         .build();
   }
 
-  public void start() {
+  void start() {
     googleApiClient.connect();
   }
 
-  public void stop() {
+  void stop() {
     googleApiClient.disconnect();
   }
 
-  public boolean isConnected() {
+  boolean isConnected() {
     return this.isConnected && watchNodes.size() > 0;
   }
 
-  public void sendMessage(Message msg) {
+  void sendMessage(Message msg) {
     if (!isConnected) {
       Log.d(TAG, "Messages " + msg.getPath() + " added to pending queue.");
       pendingMessages.add(msg);
@@ -97,20 +106,20 @@ public class WatchConnection {
     }
   }
 
-  public static class Message {
+  static class Message {
     private final String path;
     private final byte[] payload;
 
-    public Message(String path, byte[] payload) {
+    Message(String path, byte[] payload) {
       this.path = path;
       this.payload = payload;
     }
 
-    public String getPath() {
+    String getPath() {
       return path;
     }
 
-    public byte[] getPayload() {
+    byte[] getPayload() {
       return payload;
     }
   }
