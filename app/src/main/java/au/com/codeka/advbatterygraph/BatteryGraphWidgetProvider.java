@@ -34,6 +34,10 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   private static final String TAG = "BatteryGraphWidget";
   private TreeMap<Integer, RemoteViews> mRemoteViews;
 
+  /** Don't query the watch more often than this number of milliseconds. */
+  private static final long MIN_WATCH_QUERY_DELAY_MS = 4L * 60 * 1000;
+  private static  long lastWatchMessageTime;
+
   private float mPixelDensity;
   private Settings mSettings;
 
@@ -82,8 +86,19 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
           WatchConnection.i.setup(context, null);
           WatchConnection.i.start();
         }
-        WatchConnection.i.sendMessage(
-            new WatchConnection.Message("/advbatterygraph/Start", null));
+        long now = System.currentTimeMillis();
+        if (now - lastWatchMessageTime > MIN_WATCH_QUERY_DELAY_MS) {
+          Log.i(TAG, String.format(
+                  "Querying watch for battery percent (%.2f minutes since last query)",
+                  (float)(now - lastWatchMessageTime) / 60000.0f));
+          WatchConnection.i.sendMessage(
+                  new WatchConnection.Message("/advbatterygraph/Start", null));
+          lastWatchMessageTime = now;
+        } else {
+          Log.i(TAG, String.format(
+                  "Queried watch %.2f minutes ago, not querying again yet.",
+                  (float)(now - lastWatchMessageTime) / 60000.0f));
+        }
       }
 
       if (CUSTOM_REFRESH_ACTION.equals(intent.getAction())) {
