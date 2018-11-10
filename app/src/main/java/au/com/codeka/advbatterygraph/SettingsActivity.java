@@ -35,6 +35,7 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class SettingsActivity extends PreferenceActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener {
@@ -164,6 +165,7 @@ public class SettingsActivity extends PreferenceActivity
      * The "correct" solution to this problem would be to dynamically generate all my preference
      * instances with the correct key to begin with, but that's ridiculously tedious.
      */
+    @SuppressWarnings("unchecked")
     private void reloadPreference(Preference pref) {
       Class cls = pref.getClass();
       while (cls != Preference.class) {
@@ -430,37 +432,53 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     private void doExport() {
-      new AsyncTask<Void, Void, Uri>() {
-        @Override
-        protected Uri doInBackground(Void... voids) {
-          File dir = new File(getActivity().getCacheDir(), "exports");
-          if (!dir.exists()) {
-            dir.mkdir();
-          }
-          File exportFile = new File(dir, "battery-graph.csv");
-          try {
-            exportFile.createNewFile();
-            BatteryStatus.export(getActivity(), exportFile);
-          } catch (IOException e) {
-            // TODO: handle error
-          }
-          return FileProvider.getUriForFile(getActivity(),
-              "au.com.codeka.advbatterygraph.exportprovider", exportFile);
-        }
+      new ExportTask(getActivity(), view).execute();
+    }
+  }
 
-        @Override
-        protected void onPostExecute(Uri contentUri) {
-          view.findViewById(R.id.progress).setVisibility(View.GONE);
-          ((TextView) view.findViewById(R.id.label)).setText("Export complete!");
+  private static class ExportTask extends AsyncTask<Void, Void, Uri> {
+    private final Context mContext;
+    private final View mView;
 
-          Intent shareIntent = new Intent();
-          shareIntent.setAction(Intent.ACTION_SEND);
-          shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-          shareIntent.setType("text/csv");
-          shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-          startActivity(Intent.createChooser(shareIntent, "Share exported data"));
-        }
-      }.execute();
+    public ExportTask(Context context, View view) {
+      mContext = context;
+      mView = view;
+    }
+
+    @Override
+    protected Uri doInBackground(Void... voids) {
+      Log.i(TAG, "Export started.");
+      File dir = new File(mContext.getCacheDir(), "exports");
+      if (!dir.exists()) {
+        dir.mkdir();
+      }
+      File exportFile = new File(dir, "battery-graph.csv");
+      Log.i(TAG, "Writing to: " + exportFile.getAbsolutePath());
+      try {
+        exportFile.createNewFile();
+        BatteryStatus.export(mContext, exportFile);
+      } catch (IOException e) {
+        Log.e(TAG, "Error exporting!", e);
+        Toast.makeText(mContext, "Error exporting: " + e.getMessage(), Toast.LENGTH_LONG).show();
+      }
+      Uri uri = FileProvider.getUriForFile(mContext,
+          "au.com.codeka.advbatterygraph.exportprovider", exportFile);
+      Log.i(TAG, "Returning share URI: " + uri);
+      return uri;
+    }
+
+    @Override
+    protected void onPostExecute(Uri contentUri) {
+      mView.findViewById(R.id.progress).setVisibility(View.GONE);
+      ((TextView) mView.findViewById(R.id.label)).setText("Export complete!");
+
+      Log.i(TAG, "Firing share intent with: " + contentUri);
+      Intent shareIntent = new Intent();
+      shareIntent.setAction(Intent.ACTION_SEND);
+      shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
+      shareIntent.setType("text/csv");
+      shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+      mContext.startActivity(Intent.createChooser(shareIntent, "Share exported data"));
     }
   }
 }
