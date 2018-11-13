@@ -82,14 +82,16 @@ public class BatteryStatus {
      *
      * @param context A {@link Context}.
      * @param csvFile {@link File} to write the exported data (as a .csv file).
+     * @return The number of records exported.
      * @throws IOException
      */
-    public static void export(Context context, File csvFile) throws IOException {
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+    public static long export(Context context, File csvFile) throws IOException {
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
 
         PrintWriter writer = new PrintWriter(new FileOutputStream(csvFile));
         writer.println("Timestamp,PhoneBatteryFraction,PhoneBatteryCurrentInstantMilliAmperes,PhoneBatteryCurrentAvgMilliAmperes,PhoneEnergyMilliWattHours,PhoneTemperatureCelsius,WatchBatteryFraction");
         List<BatteryStatus> statuses = new Store(context).export();
+        Log.i(TAG, "Writing " + statuses.size() + " records to export file.");
         for (int i = 0; i < statuses.size(); i++) {
             BatteryStatus batteryStatus = statuses.get(i);
             writer.write(df.format(batteryStatus.getDate()));
@@ -122,6 +124,7 @@ public class BatteryStatus {
             }
             writer.println();
         }
+        return statuses.size();
     }
 
     public static class Builder {
@@ -299,7 +302,7 @@ public class BatteryStatus {
                 return statuses;
             } catch (Exception e) {
                 Log.e(TAG, "Exception", e);
-                return new ArrayList<BatteryStatus>();
+                return new ArrayList<>();
             } finally {
                 if (cursor != null) cursor.close();
                 db.close();
@@ -315,7 +318,7 @@ public class BatteryStatus {
                                 "current_avg_milliamperes", "energy_milliwatthours", "temperature"},
                         null, null, null, null, "timestamp DESC, device ASC");
 
-                ArrayList<BatteryStatus> statuses = new ArrayList<BatteryStatus>();
+                ArrayList<BatteryStatus> statuses = new ArrayList<>();
                 while (cursor.moveToNext()) {
                     statuses.add(new BatteryStatus.Builder(cursor.getInt(1))
                             .timestamp(cursor.getLong(0))
@@ -327,10 +330,11 @@ public class BatteryStatus {
                             .build());
                 }
 
+                Log.i(TAG, "Successfully fetched " + statuses.size() + " events from data store.");
                 return statuses;
             } catch (Exception e) {
                 Log.e(TAG, "Exception", e);
-                return new ArrayList<BatteryStatus>();
+                return new ArrayList<>();
             } finally {
                 if (cursor != null) cursor.close();
                 db.close();

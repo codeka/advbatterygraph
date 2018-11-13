@@ -85,10 +85,10 @@ public class SettingsActivity extends PreferenceActivity
     }
   }
 
-  /** Sometimes these get returned as false. We'll just hack it to return true. */
+  /** Only allow fragments from within our package. */
   @Override
   protected boolean isValidFragment(String fragmentName) {
-    return true;
+    return fragmentName.contains("au.com.codeka.advbatterygraph");
   }
 
   private Runnable watchConnectedRunnable = new Runnable() {
@@ -417,28 +417,36 @@ public class SettingsActivity extends PreferenceActivity
   }
 
   public static class ExportFragment extends Fragment {
-    private View view;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup parent, Bundle args) {
-      view = inflater.inflate(R.layout.export_fragment, parent, false);
-      return view;
-    }
-
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-      super.onCreate(savedInstanceState);
-      doExport();
-    }
-
-    private void doExport() {
+      View view = inflater.inflate(R.layout.export_fragment, parent, false);
       new ExportTask(getActivity(), view).execute();
+      return view;
     }
   }
 
-  private static class ExportTask extends AsyncTask<Void, Void, Uri> {
+  private static class ExportResult {
+    Exception error;
+    Uri contentUri;
+    long numRecords;
+    long timeMs;
+
+    public ExportResult(Exception e) {
+      this.error = e;
+    }
+
+    public ExportResult(Uri contentUri, long numRecords, long timeMs) {
+      this.contentUri = contentUri;
+      this.numRecords = numRecords;
+      this.timeMs = timeMs;
+    }
+  }
+
+  private static class ExportTask extends AsyncTask<Void, Void, ExportResult> {
     private final Context mContext;
     private final View mView;
+
 
     public ExportTask(Context context, View view) {
       mContext = context;
@@ -446,39 +454,53 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     @Override
-    protected Uri doInBackground(Void... voids) {
+    protected ExportResult doInBackground(Void... voids) {
       Log.i(TAG, "Export started.");
+      long startTimeNs = System.nanoTime();
       File dir = new File(mContext.getCacheDir(), "exports");
       if (!dir.exists()) {
         dir.mkdir();
       }
       File exportFile = new File(dir, "battery-graph.csv");
       Log.i(TAG, "Writing to: " + exportFile.getAbsolutePath());
+      long numResults = 0;
       try {
         exportFile.createNewFile();
-        BatteryStatus.export(mContext, exportFile);
+        numResults = BatteryStatus.export(mContext, exportFile);
       } catch (IOException e) {
         Log.e(TAG, "Error exporting!", e);
-        Toast.makeText(mContext, "Error exporting: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        return new ExportResult(e);
       }
+      long endTimeNs = System.nanoTime();
       Uri uri = FileProvider.getUriForFile(mContext,
           "au.com.codeka.advbatterygraph.exportprovider", exportFile);
       Log.i(TAG, "Returning share URI: " + uri);
-      return uri;
+      return new ExportResult(uri, numResults, (endTimeNs - startTimeNs) / 1000000L);
     }
 
     @Override
-    protected void onPostExecute(Uri contentUri) {
+    protected void onPostExecute(ExportResult result) {
       mView.findViewById(R.id.progress).setVisibility(View.GONE);
-      ((TextView) mView.findViewById(R.id.label)).setText("Export complete!");
+      TextView msgView = mView.findViewById(R.id.label);
+      if (result.error != null) {
+        msgView.setText(String.format(Locale.US,
+            "Error occurred during export\n\n%s",
+            result.error.getMessage()));
 
-      Log.i(TAG, "Firing share intent with: " + contentUri);
-      Intent shareIntent = new Intent();
-      shareIntent.setAction(Intent.ACTION_SEND);
-      shareIntent.putExtra(Intent.EXTRA_STREAM, contentUri);
-      shareIntent.setType("text/csv");
-      shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-      mContext.startActivity(Intent.createChooser(shareIntent, "Share exported data"));
+      } else {
+        msgView.setText(String.format(Locale.US,
+            "Export complete, %d records in %d ms",
+            result.numRecords,
+            result.timeMs));
+
+        Log.i(TAG, "Firing share intent with: " + result.contentUri);
+        Intent shareIntent = new Intent();
+        shareIntent.setAction(Intent.ACTION_SEND);
+        shareIntent.putExtra(Intent.EXTRA_STREAM, result.contentUri);
+        shareIntent.setType("text/csv");
+        shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        mContext.startActivity(Intent.createChooser(shareIntent, "Share exported data"));
+      }
     }
   }
 }
