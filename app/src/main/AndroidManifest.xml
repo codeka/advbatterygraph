@@ -22,7 +22,7 @@
       </intent-filter>
     </activity>
 
-    <provider android:name="android.support.v4.content.FileProvider"
+    <provider android:name="androidx.core.content.FileProvider"
               android:authorities="au.com.codeka.advbatterygraph.exportprovider"
               android:exported="false"
               android:grantUriPermissions="true">
