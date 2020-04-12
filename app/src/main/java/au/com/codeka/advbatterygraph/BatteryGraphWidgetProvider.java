@@ -32,14 +32,14 @@ import android.widget.RemoteViews;
  */
 public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   private static final String TAG = "BatteryGraphWidget";
-  private TreeMap<Integer, RemoteViews> mRemoteViews;
+  private TreeMap<Integer, RemoteViews> remoteViews;
 
   /** Don't query the watch more often than this number of milliseconds. */
   private static final long MIN_WATCH_QUERY_DELAY_MS = 4L * 60 * 1000;
   private static  long lastWatchMessageTime;
 
-  private float mPixelDensity;
-  private Settings mSettings;
+  private float pixelDensity;
+  private Settings settings;
 
   public static final String CUSTOM_REFRESH_ACTION = "au.com.codeka.advbatterygraph.UpdateAction";
 
@@ -71,17 +71,17 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
             new ComponentName(context, BatteryGraphWidgetProvider.class));
       }
 
-      mSettings = Settings.get(context);
-      if (mRemoteViews == null) {
-        mPixelDensity = context.getResources().getDisplayMetrics().density;
-        mRemoteViews = new TreeMap<>();
+      settings = Settings.get(context);
+      if (remoteViews == null) {
+        pixelDensity = context.getResources().getDisplayMetrics().density;
+        remoteViews = new TreeMap<>();
         for (int appWidgetId : appWidgetIds) {
-          mRemoteViews.put(appWidgetId, new RemoteViews(context.getPackageName(),
+          remoteViews.put(appWidgetId, new RemoteViews(context.getPackageName(),
               R.layout.widget));
         }
       }
 
-      if (mSettings.monitorWatch(appWidgetIds)) {
+      if (settings.monitorWatch(appWidgetIds)) {
         if (!WatchConnection.i.isConnected()) {
           WatchConnection.i.setup(context, null);
           WatchConnection.i.start();
@@ -110,7 +110,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       if (appWidgetIds != null) {
         for (int appWidgetId : appWidgetIds) {
           AppWidgetManager.getInstance(context).updateAppWidget(
-              appWidgetId, mRemoteViews.get(appWidgetId));
+              appWidgetId, remoteViews.get(appWidgetId));
         }
       }
     } catch (Exception e) {
@@ -129,7 +129,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   @Override
   public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
       int appWidgetId, Bundle newOptions) {
-    Settings.GraphSettings gs = mSettings.getGraphSettings(appWidgetId);
+    Settings.GraphSettings gs = settings.getGraphSettings(appWidgetId);
     if (gs.autoGraphSize()) {
       gs.setGraphWidth(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH));
       gs.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
@@ -163,19 +163,19 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
       PendingIntent pendingIntent = PendingIntent.getActivity(context, appWidgetId, intent,
           PendingIntent.FLAG_CANCEL_CURRENT);
-      mRemoteViews.get(appWidgetId).setOnClickPendingIntent(R.id.image, pendingIntent);
+      remoteViews.get(appWidgetId).setOnClickPendingIntent(R.id.image, pendingIntent);
 
-      Settings.GraphSettings graphSettings = mSettings.getGraphSettings(appWidgetId);
+      Settings.GraphSettings graphSettings = settings.getGraphSettings(appWidgetId);
       int numMinutes = graphSettings.getNumHours() * 60;
       Bitmap bmp = renderGraph(context, graphSettings, numMinutes);
-      mRemoteViews.get(appWidgetId).setImageViewBitmap(R.id.image, bmp);
+      remoteViews.get(appWidgetId).setImageViewBitmap(R.id.image, bmp);
     }
   }
 
   private Bitmap renderGraph(Context context, Settings.GraphSettings graphSettings,
       int numMinutes) {
-    final int width = (int) (graphSettings.getGraphWidth() * mPixelDensity);
-    final int height = (int) (graphSettings.getGraphHeight() * mPixelDensity);
+    final int width = (int) (graphSettings.getGraphWidth() * pixelDensity);
+    final int height = (int) (graphSettings.getGraphHeight() * pixelDensity);
     if (width == 0 || height == 0) {
       return null;
     }
@@ -185,7 +185,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     int graphHeight = height;
     if (graphSettings.showTimeScale()) {
-      graphHeight -= 10 * mPixelDensity;
+      graphHeight -= 10 * pixelDensity;
     }
 
     List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(
@@ -367,10 +367,10 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     Paint paint = new Paint();
     paint.setAntiAlias(true);
-    paint.setTextSize(20.0f * mPixelDensity);
+    paint.setTextSize(20.0f * pixelDensity);
     paint.setColor(Color.WHITE);
     paint.setStyle(Style.FILL);
-    paint.setStrokeWidth(mPixelDensity);
+    paint.setStrokeWidth(pixelDensity);
     float textWidth = paint.measureText(text);
     canvas.drawText(text, width - textWidth - 4, graphHeight - 4, paint);
 
@@ -379,7 +379,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
   private void showTimeScale(Canvas canvas, int width, int height, int numMinutes,
       int numGraphsShowing, boolean drawLines) {
-    Rect r = new Rect(0, height - (int) (10 * mPixelDensity), width, height);
+    Rect r = new Rect(0, height - (int) (10 * pixelDensity), width, height);
     Paint bgPaint = new Paint();
     bgPaint.setARGB(128, 0, 0, 0);
     bgPaint.setStyle(Style.FILL);
@@ -389,10 +389,10 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     Paint fgPaint = new Paint();
     fgPaint.setAntiAlias(true);
-    fgPaint.setTextSize(10 * mPixelDensity);
+    fgPaint.setTextSize(10 * pixelDensity);
     fgPaint.setColor(Color.WHITE);
     fgPaint.setStyle(Style.FILL);
-    fgPaint.setStrokeWidth(mPixelDensity);
+    fgPaint.setStrokeWidth(pixelDensity);
 
     Calendar cal = Calendar.getInstance();
     cal.setTime(new Date());
@@ -429,7 +429,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         float textWidth = fgPaint.measureText(text);
         canvas.drawText(text, x - (textWidth / 2), height - 4, fgPaint);
         if (drawLines) {
-          canvas.drawLine(x, 0, x, height - (10.0f * mPixelDensity), fgPaint);
+          canvas.drawLine(x, 0, x, height - (10.0f * pixelDensity), fgPaint);
         }
       }
     }
