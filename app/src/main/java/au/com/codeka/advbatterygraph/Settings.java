@@ -79,6 +79,7 @@ public class Settings {
     private int numHours;
     private boolean showTimeScale;
     private boolean showTimeLines;
+    private boolean showLastLevelLine;
     private boolean autoGraphSize;
 
     public boolean autoGraphSize() {
@@ -145,6 +146,10 @@ public class Settings {
       return numHours;
     }
 
+    public boolean showLastLevelLine() {
+      return showLastLevelLine;
+    }
+
     public boolean showTimeScale() {
       return showTimeScale;
     }
@@ -172,6 +177,7 @@ public class Settings {
       gs.numHours = Integer.parseInt(pref.getString(prefix + "NumHours", Integer.toString(48)));
       gs.showTimeScale = pref.getBoolean(prefix + "ShowTime", false);
       gs.showTimeLines = pref.getBoolean(prefix + "ShowTimeLines", false);
+      gs.showLastLevelLine = pref.getBoolean(prefix + "ShowLastLevelLine", false);
       return gs;
     }
 
@@ -194,6 +200,7 @@ public class Settings {
           .putString(prefix + "NumHours", Integer.toString(numHours))
           .putBoolean(prefix + "ShowTime", showTimeScale)
           .putBoolean(prefix + "ShowTimeLines", showTimeLines)
+          .putBoolean(prefix + "ShowLastLevelLine", showLastLevelLine)
           .apply();
     }
   }

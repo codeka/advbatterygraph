@@ -303,9 +303,15 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       drawGraphLine(batteryEnergyPoints, canvas);
     }
     if (watchChargePoints.size() > 0) {
+      if (graphSettings.showLastLevelLine()) {
+        drawHorizontalLine(watchChargePoints, canvas);
+      }
       drawGraphLine(watchChargePoints, canvas);
     }
     if (batteryChargePoints != null) {
+      if (graphSettings.showLastLevelLine()) {
+        drawHorizontalLine(batteryChargePoints, canvas);
+      }
       drawGraphLine(batteryChargePoints, canvas);
     }
 
@@ -702,6 +708,17 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       paint.setColor(colour);
       canvas.drawPath(path, paint);
     }
+  }
+
+  private void drawHorizontalLine(List<GraphPoint> points, Canvas canvas) {
+    GraphPoint pt = points.get(0);
+
+    Paint paint = new Paint();
+    paint.setStyle(Style.STROKE);
+    paint.setStrokeWidth(4.0f);
+    paint.setColor(pt.colour);
+    paint.setAlpha(80);
+    canvas.drawLine(0, pt.y, pt.x, pt.y, paint);
   }
 
   private interface GraphCustomizer {
