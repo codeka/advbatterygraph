@@ -32,8 +32,8 @@ android {
 
 dependencies {
     compileOnly 'com.google.android.wearable:wearable:2.4.0'
-    implementation 'com.android.support:wear:26.1.0'
+    implementation 'androidx.wear:wear:1.0.0'
     implementation 'com.google.android.support:wearable:2.4.0'
-    implementation 'com.android.support:support-v4:26.1.0'
+    implementation 'androidx.legacy:legacy-support-v4:1.0.0'
     implementation 'com.google.android.gms:play-services-wearable:16.0.1'
 }

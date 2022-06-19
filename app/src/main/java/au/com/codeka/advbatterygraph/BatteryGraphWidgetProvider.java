@@ -23,7 +23,7 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Bundle;
-import android.support.annotation.Nullable;
+import androidx.annotation.Nullable;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -150,7 +150,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     // make sure the alarm is running
     AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     Intent intent = new Intent(context, BatteryGraphAlarmReceiver.class);
-    PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, 0);
+    PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
     alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingIntent);
 
     refreshGraph(context, appWidgetIds);
@@ -162,7 +162,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
       intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
       PendingIntent pendingIntent = PendingIntent.getActivity(context, appWidgetId, intent,
-          PendingIntent.FLAG_CANCEL_CURRENT);
+          PendingIntent.FLAG_CANCEL_CURRENT | PendingIntent.FLAG_IMMUTABLE);
       mRemoteViews.get(appWidgetId).setOnClickPendingIntent(R.id.image, pendingIntent);
 
       Settings.GraphSettings graphSettings = mSettings.getGraphSettings(appWidgetId);

@@ -1,13 +1,13 @@
 apply plugin: 'com.android.application'
 
 android {
-  compileSdkVersion 26
+  compileSdkVersion 31
   buildToolsVersion "28.0.3"
 
   defaultConfig {
     applicationId "au.com.codeka.advbatterygraph"
-    minSdkVersion 20
-    targetSdkVersion 26
+    minSdkVersion 29
+    targetSdkVersion 31
   }
 
   lintOptions {
@@ -23,7 +23,7 @@ android {
 }
 
 dependencies {
-  implementation 'com.android.support:support-v4:26.1.0'
-  implementation 'com.google.android.gms:play-services-wearable:16.0.1'
+  implementation 'androidx.legacy:legacy-support-v4:1.0.0'
+  implementation 'com.google.android.gms:play-services-wearable:17.1.0'
   wearApp project(':wear')
 }
