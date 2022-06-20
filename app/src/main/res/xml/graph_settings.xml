@@ -31,5 +31,8 @@
     <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowTimeLines"
                         android:title="Include time markers"
                         android:dependency="au.com.codeka.advbatterygraph.(%d).ShowTime" />
+    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowLastLevelLine"
+                        android:title="Draw line at last battery level"
+                        android:summary="Draw a horizontal line at the latest level for each graph"/>
   </PreferenceCategory>
 </PreferenceScreen>

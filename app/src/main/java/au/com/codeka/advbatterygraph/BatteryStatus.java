@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 import android.content.ContentValues;
@@ -102,12 +103,12 @@ public class BatteryStatus {
    * @throws IOException
    */
   public static long export(Context context, File csvFile) throws IOException {
-    DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm");
+    DateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.ENGLISH);
 
     PrintWriter writer = new PrintWriter(new FileOutputStream(csvFile));
     writer.println("Timestamp,PhoneBatteryFraction,PhoneBatteryCurrentInstantMilliAmperes," +
-            "PhoneBatteryCurrentAvgMilliAmperes,PhoneEnergyMilliWattHours,PhoneTemperatureCelsius," +
-            "WatchBatteryFraction");
+                   "PhoneBatteryCurrentAvgMilliAmperes,PhoneEnergyMilliWattHours," +
+                   "PhoneTemperatureCelsius,WatchBatteryFraction");
     List<BatteryStatus> statuses = new Store(context).export();
     Log.i(TAG, "Writing " + statuses.size() + " records to export file.");
     for (int i = 0; i < statuses.size(); i++) {
@@ -202,7 +203,7 @@ public class BatteryStatus {
   }
 
   private static class Store extends SQLiteOpenHelper {
-    private static Object sLock = new Object();
+    private static final Object LOCK = new Object();
 
     public Store(Context context) {
       super(context, "battery.db", null, 7);
@@ -258,7 +259,7 @@ public class BatteryStatus {
     }
 
     public void save(BatteryStatus status) {
-      synchronized (sLock) {
+      synchronized (LOCK) {
         SQLiteDatabase db = getWritableDatabase();
         try {
           // insert a new cached value
@@ -283,7 +284,7 @@ public class BatteryStatus {
      * Delete entries older than {@see dt}.
      */
     public void deleteOlderThan(long timestamp) {
-      synchronized (sLock) {
+      synchronized (LOCK) {
         SQLiteDatabase db = getWritableDatabase();
         try {
           db.delete("battery_history", "timestamp < " + timestamp, null);

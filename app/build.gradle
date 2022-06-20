@@ -7,11 +7,15 @@ android {
   defaultConfig {
     applicationId "au.com.codeka.advbatterygraph"
     minSdkVersion 29
-    targetSdkVersion 31
-  }
+    targetSdkVersion 31  }
 
   lintOptions {
     abortOnError false
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_1_8
+    targetCompatibility JavaVersion.VERSION_1_8
   }
 
   buildTypes {

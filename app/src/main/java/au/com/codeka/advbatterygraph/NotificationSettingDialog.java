@@ -35,6 +35,10 @@ public class NotificationSettingDialog extends DialogPreference {
     final TextView percentText = view.findViewById(R.id.percent_text);
     directionSpinner = view.findViewById(R.id.direction_spinner);
     deviceSpinner = view.findViewById(R.id.device_spinner);
+    percentBar = (SeekBar) view.findViewById(R.id.percent_bar);
+    final TextView percentText = (TextView) view.findViewById(R.id.percent_text);
+    directionSpinner = (Spinner) view.findViewById(R.id.direction_spinner);
+    deviceSpinner = (Spinner) view.findViewById(R.id.device_spinner);
 
     percentBar.setMax(20);
     percentBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -99,7 +103,7 @@ public class NotificationSettingDialog extends DialogPreference {
           .putInt(getKey() + ":percent", percent)
           .putString(getKey() + ":direction", direction)
           .putString(getKey() + ":device", device)
-          .commit();
+          .apply();
     }
   }
 
@@ -123,6 +127,6 @@ public class NotificationSettingDialog extends DialogPreference {
       }
     }
 
-    setKey(String.format("notification:%d", maxKey + 1));
+    setKey(String.format(Locale.ENGLISH, "notification:%d", maxKey + 1));
   }
 }

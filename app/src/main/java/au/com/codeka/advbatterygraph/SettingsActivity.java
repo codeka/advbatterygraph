@@ -90,14 +90,9 @@ public class SettingsActivity extends PreferenceActivity
     return fragmentName.contains("au.com.codeka.advbatterygraph");
   }
 
-  private Runnable watchConnectedRunnable = new Runnable() {
-    @Override
-    public void run() {
-      // Just invalidate the headers, the onBuildHeaders logic will recreate the headers
-      // with the watch enabled again.
-      invalidateHeaders();
-    }
-  };
+  // Just invalidate the headers, the onBuildHeaders logic will recreate the headers with the watch
+  // enabled again.
+  private Runnable watchConnectedRunnable = this::invalidateHeaders;
 
   /**
    * When preferences change, notify the graph to update itself.
@@ -210,7 +205,8 @@ public class SettingsActivity extends PreferenceActivity
 
     @Override
     protected void refreshSummaries() {
-      EditTextIntegerPreference intpref = (EditTextIntegerPreference) findPreference(getPrefix() + "GraphWidth");
+      EditTextIntegerPreference intpref =
+          (EditTextIntegerPreference) findPreference(getPrefix() + "GraphWidth");
       intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
 
       intpref = (EditTextIntegerPreference) findPreference(getPrefix() + "GraphHeight");
@@ -240,7 +236,8 @@ public class SettingsActivity extends PreferenceActivity
       addPreferencesFromResource(R.xml.battery_settings);
 
       // battery charge is only available on Android L (API level 21)+.
-      Preference batteryCurrentInstantPref = findPreference(getPrefix() + "IncludeBatteryCurrentInstant");
+      Preference batteryCurrentInstantPref =
+          findPreference(getPrefix() + "IncludeBatteryCurrentInstant");
       Preference batteryCurrentAvgPref = findPreference(getPrefix() + "IncludeBatteryCurrentAvg");
       Preference batteryEnergyPref = findPreference(getPrefix() + "IncludeBatteryEnergy");
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
@@ -305,10 +302,11 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+    public View onCreateView(
+        LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
       final View v = super.onCreateView(inflater, container, savedInstanceState);
 
-      final ListView lv = (ListView) v.findViewById(android.R.id.list);
+      final ListView lv = v.findViewById(android.R.id.list);
       registerForContextMenu(lv);
 
       return v;
@@ -443,20 +441,20 @@ public class SettingsActivity extends PreferenceActivity
   }
 
   private static class ExportTask extends AsyncTask<Void, Void, ExportResult> {
-    private final Context mContext;
-    private final View mView;
+    private final Context context;
+    private final View view;
 
 
     public ExportTask(Context context, View view) {
-      mContext = context;
-      mView = view;
+      this.context = context;
+      this.view = view;
     }
 
     @Override
     protected ExportResult doInBackground(Void... voids) {
       Log.i(TAG, "Export started.");
       long startTimeNs = System.nanoTime();
-      File dir = new File(mContext.getCacheDir(), "exports");
+      File dir = new File(context.getCacheDir(), "exports");
       if (!dir.exists()) {
         dir.mkdir();
       }
@@ -465,13 +463,13 @@ public class SettingsActivity extends PreferenceActivity
       long numResults = 0;
       try {
         exportFile.createNewFile();
-        numResults = BatteryStatus.export(mContext, exportFile);
+        numResults = BatteryStatus.export(context, exportFile);
       } catch (IOException e) {
         Log.e(TAG, "Error exporting!", e);
         return new ExportResult(e);
       }
       long endTimeNs = System.nanoTime();
-      Uri uri = FileProvider.getUriForFile(mContext,
+      Uri uri = FileProvider.getUriForFile(context,
           "au.com.codeka.advbatterygraph.exportprovider", exportFile);
       Log.i(TAG, "Returning share URI: " + uri);
       return new ExportResult(uri, numResults, (endTimeNs - startTimeNs) / 1000000L);
@@ -479,8 +477,8 @@ public class SettingsActivity extends PreferenceActivity
 
     @Override
     protected void onPostExecute(ExportResult result) {
-      mView.findViewById(R.id.progress).setVisibility(View.GONE);
-      TextView msgView = mView.findViewById(R.id.label);
+      view.findViewById(R.id.progress).setVisibility(View.GONE);
+      TextView msgView = view.findViewById(R.id.label);
       if (result.error != null) {
         msgView.setText(String.format(Locale.US,
             "Error occurred during export\n\n%s",
@@ -498,7 +496,7 @@ public class SettingsActivity extends PreferenceActivity
         shareIntent.putExtra(Intent.EXTRA_STREAM, result.contentUri);
         shareIntent.setType("text/csv");
         shareIntent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        mContext.startActivity(Intent.createChooser(shareIntent, "Share exported data"));
+        context.startActivity(Intent.createChooser(shareIntent, "Share exported data"));
       }
     }
   }

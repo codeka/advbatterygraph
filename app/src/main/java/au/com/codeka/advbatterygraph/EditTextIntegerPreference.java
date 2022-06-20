@@ -9,7 +9,7 @@ import android.util.AttributeSet;
  * This is a version of {@see EditTextPreference} which works with integers instead.
  */
 public class EditTextIntegerPreference extends EditTextPreference {
-  private Integer mInteger;
+  private Integer integer;
 
   public EditTextIntegerPreference(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
@@ -29,8 +29,8 @@ public class EditTextIntegerPreference extends EditTextPreference {
   @Override
   public void setText(String text) {
     final boolean wasBlocking = shouldDisableDependents();
-    mInteger = parseInteger(text);
-    persistString(mInteger != null ? mInteger.toString() : null);
+    integer = parseInteger(text);
+    persistString(integer != null ? integer.toString() : null);
     final boolean isBlocking = shouldDisableDependents();
     if (isBlocking != wasBlocking) {
       notifyDependencyChange(isBlocking);
@@ -39,11 +39,11 @@ public class EditTextIntegerPreference extends EditTextPreference {
 
   @Override
   public String getText() {
-    return mInteger != null ? mInteger.toString() : null;
+    return integer != null ? integer.toString() : null;
   }
 
   public Integer getInteger() {
-    return mInteger;
+    return integer;
   }
 
   @Override

@@ -4,9 +4,11 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.preference.PreferenceManager;
 
+import java.util.Locale;
+
 public class Settings {
-  private SharedPreferences mPreferences;
-  private boolean mMonitorWatch;
+  private SharedPreferences preferences;
+  private boolean monitorWatch;
 
   public static final String PREF_PREFIX = "au.com.codeka.advbatterygraph.";
 
@@ -15,7 +17,7 @@ public class Settings {
 
   public boolean monitorWatch(int[] appWidgetIds) {
     if (appWidgetIds == null) {
-      return mMonitorWatch;
+      return monitorWatch;
     }
 
     boolean monitor = false;
@@ -26,36 +28,37 @@ public class Settings {
         break;
       }
     }
-    if (mMonitorWatch != monitor) {
-      mMonitorWatch = monitor;
-      mPreferences.edit().putBoolean(PREF_PREFIX + "MonitorWatch", monitor).apply();
+    if (monitorWatch != monitor) {
+      monitorWatch = monitor;
+      preferences.edit().putBoolean(PREF_PREFIX + "MonitorWatch", monitor).apply();
     }
-    return mMonitorWatch;
+    return monitorWatch;
   }
 
   public GraphSettings getGraphSettings(int appWidgetId) {
-    String prefix = String.format("%s(%d).", PREF_PREFIX, appWidgetId);
-    if (!mPreferences.contains(prefix + "AutoGraph")) {
+    String prefix = String.format(Locale.ENGLISH, "%s(%d).", PREF_PREFIX, appWidgetId);
+    if (!preferences.contains(prefix + "AutoGraph")) {
       // if we don't have settings for this graph, copy over the 'default' preferences.
-      GraphSettings gs = GraphSettings.get(mPreferences, PREF_PREFIX);
-      gs.save(mPreferences, prefix);
+      GraphSettings gs = GraphSettings.get(preferences, PREF_PREFIX);
+      gs.save(preferences, prefix);
     }
-    return GraphSettings.get(mPreferences, String.format("%s(%d).", PREF_PREFIX, appWidgetId));
+    return GraphSettings.get(
+        preferences, String.format(Locale.ENGLISH, "%s(%d).", PREF_PREFIX, appWidgetId));
   }
 
   public static Settings get(Context context) {
     SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
 
     Settings s = new Settings();
-    s.mPreferences = pref;
-    s.mMonitorWatch = pref.getBoolean(PREF_PREFIX + "MonitorWatch", true);
+    s.preferences = pref;
+    s.monitorWatch = pref.getBoolean(PREF_PREFIX + "MonitorWatch", true);
     return s;
   }
 
   public void save(Context context) {
     SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
     pref.edit()
-        .putBoolean(PREF_PREFIX + "MonitorWatch", mMonitorWatch)
+        .putBoolean(PREF_PREFIX + "MonitorWatch", monitorWatch)
         .apply();
   }
 
@@ -76,6 +79,7 @@ public class Settings {
     private int numHours;
     private boolean showTimeScale;
     private boolean showTimeLines;
+    private boolean showLastLevelLine;
     private boolean autoGraphSize;
 
     public boolean autoGraphSize() {
@@ -142,6 +146,10 @@ public class Settings {
       return numHours;
     }
 
+    public boolean showLastLevelLine() {
+      return showLastLevelLine;
+    }
+
     public boolean showTimeScale() {
       return showTimeScale;
     }
@@ -169,6 +177,7 @@ public class Settings {
       gs.numHours = Integer.parseInt(pref.getString(prefix + "NumHours", Integer.toString(48)));
       gs.showTimeScale = pref.getBoolean(prefix + "ShowTime", false);
       gs.showTimeLines = pref.getBoolean(prefix + "ShowTimeLines", false);
+      gs.showLastLevelLine = pref.getBoolean(prefix + "ShowLastLevelLine", false);
       return gs;
     }
 
@@ -191,6 +200,7 @@ public class Settings {
           .putString(prefix + "NumHours", Integer.toString(numHours))
           .putBoolean(prefix + "ShowTime", showTimeScale)
           .putBoolean(prefix + "ShowTimeLines", showTimeLines)
+          .putBoolean(prefix + "ShowLastLevelLine", showLastLevelLine)
           .apply();
     }
   }
