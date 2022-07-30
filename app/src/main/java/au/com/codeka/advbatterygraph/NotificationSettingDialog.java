@@ -36,7 +36,6 @@ public class NotificationSettingDialog extends DialogPreference {
     directionSpinner = view.findViewById(R.id.direction_spinner);
     deviceSpinner = view.findViewById(R.id.device_spinner);
     percentBar = (SeekBar) view.findViewById(R.id.percent_bar);
-    final TextView percentText = (TextView) view.findViewById(R.id.percent_text);
     directionSpinner = (Spinner) view.findViewById(R.id.direction_spinner);
     deviceSpinner = (Spinner) view.findViewById(R.id.device_spinner);
 
