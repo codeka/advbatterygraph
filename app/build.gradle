@@ -2,18 +2,14 @@ apply plugin: 'com.android.application'
 
 android {
   compileSdkVersion 31
-  buildToolsVersion "28.0.3"
 
-  defaultConfig {
+    defaultConfig {
     applicationId "au.com.codeka.advbatterygraph"
     minSdkVersion 29
     targetSdkVersion 31  }
 
-  lintOptions {
-    abortOnError false
-  }
 
-  compileOptions {
+    compileOptions {
     sourceCompatibility JavaVersion.VERSION_1_8
     targetCompatibility JavaVersion.VERSION_1_8
   }
@@ -24,6 +20,10 @@ android {
       proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.txt'
     }
   }
+    lint {
+        abortOnError false
+    }
+    namespace 'au.com.codeka.advbatterygraph'
 }
 
 dependencies {

@@ -6,11 +6,15 @@ import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Locale;
 
+import android.Manifest;
 import android.app.Fragment;
 import android.appwidget.AppWidgetManager;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.BatteryManager;
@@ -23,7 +27,10 @@ import android.preference.PreferenceFragment;
 import android.preference.PreferenceGroup;
 import android.preference.PreferenceManager;
 import android.preference.PreferenceScreen;
+
+import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
+
 import android.util.Log;
 import android.view.ContextMenu;
 import android.view.ContextMenu.ContextMenuInfo;
@@ -37,7 +44,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 
 public class SettingsActivity extends PreferenceActivity
-    implements SharedPreferences.OnSharedPreferenceChangeListener {
+        implements SharedPreferences.OnSharedPreferenceChangeListener {
   private static final String TAG = "SettingsActivity";
 
   @Override
@@ -45,8 +52,25 @@ public class SettingsActivity extends PreferenceActivity
     super.onCreate(savedInstanceState);
 
     PreferenceManager.getDefaultSharedPreferences(this)
-        .registerOnSharedPreferenceChangeListener(this);
+            .registerOnSharedPreferenceChangeListener(this);
     WatchConnection.i.setup(this, watchConnectedRunnable);
+
+    Log.i("DEANH", "Settings fragment onCreate");
+    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+      ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.BLUETOOTH_CONNECT }, 975364);
+
+      return;
+    }
+    for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+      Log.i("DEANH", "got device " + device.getName() + " - " + device);
+      try {
+        Method method = device.getClass().getMethod("getBatteryLevel");
+        Object level = method.invoke(device);
+        Log.i("DEANH", "    battery level: " + level);
+      } catch (Exception e) {
+        Log.i("DEANH", "error getting battery level: " + e.toString());
+      }
+    }
   }
 
   @Override
