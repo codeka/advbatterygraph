@@ -78,6 +78,8 @@ public class SettingsActivity extends PreferenceActivity
     super.onResume();
     WatchConnection.i.start();
     WatchConnection.i.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
+
+    notifyWidgetRefresh();
   }
 
   @Override
@@ -123,8 +125,13 @@ public class SettingsActivity extends PreferenceActivity
    */
   @Override
   public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+    notifyWidgetRefresh();
+  }
+
+  private void notifyWidgetRefresh() {
+    Log.i("DEANH", "onSharedPreferenceChanged");
     BatteryGraphWidgetProvider.notifyRefresh(this, new int[]{
-        getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID)
+            getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID)
     });
   }
 

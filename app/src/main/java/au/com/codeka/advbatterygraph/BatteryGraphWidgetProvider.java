@@ -147,16 +147,17 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   public void onUpdate(Context context, AppWidgetManager mgr, int[] appWidgetIds) {
     super.onUpdate(context, mgr, appWidgetIds);
 
-    // make sure the alarm is running
-    AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
-    Intent intent = new Intent(context, BatteryGraphAlarmReceiver.class);
-    PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_IMMUTABLE);
-    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingIntent);
-
     refreshGraph(context, appWidgetIds);
   }
 
   private void refreshGraph(Context context, int[] appWidgetIds) {
+    // make sure the alarm is running
+    Log.i("DEANH", "onUpdate, refreshing alarm");
+    AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+    Intent alarmIntent = new Intent(context, BatteryGraphAlarmReceiver.class);
+    PendingIntent pendingAlarmIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, PendingIntent.FLAG_IMMUTABLE);
+    alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingAlarmIntent);
+
     for (int appWidgetId : appWidgetIds) {
       Intent intent = new Intent(context, SettingsActivity.class);
       intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
