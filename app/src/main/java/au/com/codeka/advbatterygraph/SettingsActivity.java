@@ -254,11 +254,11 @@ public class SettingsActivity extends AppCompatActivity
     }
   }
 
-  public static class WatchSettingsFragment extends BasePreferenceFragment {
+  public static class BluetoothSettingsFragment extends BasePreferenceFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-      addPreferencesFromResource(R.xml.watch_settings);
+      addPreferencesFromResource(R.xml.bluetooth_settings);
     }
 
     @Override

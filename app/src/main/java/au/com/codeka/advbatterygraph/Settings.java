@@ -10,7 +10,6 @@ import java.util.Locale;
 
 public class Settings {
   @NonNull private final Context context;
-  private boolean monitorWatch;
 
   // The previous version stored all preferences in a single shared preference with a weird prefix,
   // but that is kind of hard to maintain. So we want to migrate that to the new system.
@@ -18,27 +17,6 @@ public class Settings {
 
   private Settings(@NonNull Context context) {
     this.context = context;
-  }
-
-  // TODO: remove me
-  public boolean monitorWatch(int[] appWidgetIds) {
-    if (appWidgetIds == null) {
-      return monitorWatch;
-    }
-
-    boolean monitor = false;
-    for (int appWidgetId : appWidgetIds) {
-      GraphSettings gs = getGraphSettings(appWidgetId);
-      if (gs.showWatchGraph()) {
-        monitor = true;
-        break;
-      }
-    }
-    if (monitorWatch != monitor) {
-      monitorWatch = monitor;
-      //preferences.edit().putBoolean(LEGACY_PREF_PREFIX + "MonitorWatch", monitor).apply();
-    }
-    return monitorWatch;
   }
 
   public GraphSettings getGraphSettings(int appWidgetId) {

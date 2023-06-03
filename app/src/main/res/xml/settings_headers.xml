@@ -2,7 +2,7 @@
 <PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
   <Preference
       app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$GraphSettingsFragment"
-      app:icon="@drawable/ic_action_full_screen"
+      app:icon="@drawable/ic_graphsettings"
       app:title="Graph Settings"
       app:summary="Size and look of the graph widget." />
 
@@ -13,10 +13,10 @@
       app:summary="Settings for monitoring your phones battery." />
 
   <Preference
-      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$WatchSettingsFragment"
-      app:icon="@drawable/ic_watch"
-      app:title="Watch Graph"
-      app:summary="Settings for monitoring your watches battery." />
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$BluetoothSettingsFragment"
+      app:icon="@drawable/ic_bluetooth"
+      app:title="Bluetooth Devices"
+      app:summary="Settings for monitoring your bluetooth devices (watch, headphones, etc)." />
 
   <Preference
       app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$TempSettingsFragment"
@@ -26,7 +26,7 @@
 
   <Preference
       app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$NotificationSettingsFragment"
-      app:icon="@drawable/ic_action_alarms"
+      app:icon="@drawable/ic_notifications"
       app:title="Notifications"
       app:summary="Notifications for battery levels" />
 

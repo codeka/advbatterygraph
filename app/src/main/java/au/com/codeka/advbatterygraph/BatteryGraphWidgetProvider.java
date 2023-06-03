@@ -81,26 +81,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         }
       }
 
-      if (settings.monitorWatch(appWidgetIds)) {
-        if (!WatchConnection.i.isConnected()) {
-          WatchConnection.i.setup(context, null);
-          WatchConnection.i.start();
-        }
-        long now = System.currentTimeMillis();
-        if (now - lastWatchMessageTime > MIN_WATCH_QUERY_DELAY_MS) {
-          Log.i(TAG, String.format(
-                  "Querying watch for battery percent (%.2f minutes since last query)",
-                  (float)(now - lastWatchMessageTime) / 60000.0f));
-          WatchConnection.i.sendMessage(
-                  new WatchConnection.Message("/advbatterygraph/Start", null));
-          lastWatchMessageTime = now;
-        } else {
-          Log.i(TAG, String.format(
-                  "Queried watch %.2f minutes ago, not querying again yet.",
-                  (float)(now - lastWatchMessageTime) / 60000.0f));
-        }
-      }
-
       if (CUSTOM_REFRESH_ACTION.equals(intent.getAction())) {
         refreshGraph(context, appWidgetIds);
       } else {
