@@ -1,18 +1,21 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-  <PreferenceCategory android:title="Temperature Graph">
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).IncludeTemp"
-                        android:title="Show Temperature"
-                        android:summary="Include a graph of battery temperature." />
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+  <PreferenceCategory
+      app:title="Temperature Graph">
     <CheckBoxPreference
-        android:key="au.com.codeka.advbatterygraph.(%d).SmoothTemp"
-        android:title="Smooth Graph"
-        android:summary="Smooth the graph so it's not so noisy."
-        android:defaultValue="false" />
-    <ListPreference android:key="au.com.codeka.advbatterygraph.(%d).TempUnits"
-                    android:title="Units"
-                    android:defaultValue="C"
-                    android:entries="@array/temp_units_display"
-                    android:entryValues="@array/temp_units_values" />
+        app:key="IncludeTemp"
+        app:title="Show Temperature"
+        app:summary="Include a graph of battery temperature." />
+    <CheckBoxPreference
+        app:key="SmoothTemp"
+        app:title="Smooth Graph"
+        app:summary="Smooth the graph so it's not so noisy."
+        app:defaultValue="false" />
+    <ListPreference
+        app:key="TempUnits"
+        app:title="Units"
+        app:defaultValue="C"
+        app:entries="@array/temp_units_display"
+        app:entryValues="@array/temp_units_values" />
   </PreferenceCategory>
 </PreferenceScreen>

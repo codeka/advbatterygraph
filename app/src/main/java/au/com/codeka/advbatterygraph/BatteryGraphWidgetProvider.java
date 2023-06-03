@@ -133,7 +133,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     if (gs.autoGraphSize()) {
       gs.setGraphWidth(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH));
       gs.setGraphHeight(newOptions.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT));
-      gs.save(context);
+      gs.save(context, appWidgetId);
     }
 
     refreshGraph(context, new int[]{appWidgetId});
@@ -152,7 +152,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
   private void refreshGraph(Context context, int[] appWidgetIds) {
     // make sure the alarm is running
-    Log.i("DEANH", "onUpdate, refreshing alarm");
     AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     Intent alarmIntent = new Intent(context, BatteryGraphAlarmReceiver.class);
     PendingIntent pendingAlarmIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, PendingIntent.FLAG_IMMUTABLE);

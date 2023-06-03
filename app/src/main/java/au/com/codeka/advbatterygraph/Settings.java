@@ -2,19 +2,25 @@ package au.com.codeka.advbatterygraph;
 
 import android.content.Context;
 import android.content.SharedPreferences;
+
+import androidx.annotation.NonNull;
 import androidx.preference.PreferenceManager;
 
 import java.util.Locale;
 
 public class Settings {
-  private SharedPreferences preferences;
+  @NonNull private final Context context;
   private boolean monitorWatch;
 
-  public static final String PREF_PREFIX = "au.com.codeka.advbatterygraph.";
+  // The previous version stored all preferences in a single shared preference with a weird prefix,
+  // but that is kind of hard to maintain. So we want to migrate that to the new system.
+  public static final String LEGACY_PREF_PREFIX = "au.com.codeka.advbatterygraph.";
 
-  private Settings() {
+  private Settings(@NonNull Context context) {
+    this.context = context;
   }
 
+  // TODO: remove me
   public boolean monitorWatch(int[] appWidgetIds) {
     if (appWidgetIds == null) {
       return monitorWatch;
@@ -30,40 +36,38 @@ public class Settings {
     }
     if (monitorWatch != monitor) {
       monitorWatch = monitor;
-      preferences.edit().putBoolean(PREF_PREFIX + "MonitorWatch", monitor).apply();
+      //preferences.edit().putBoolean(LEGACY_PREF_PREFIX + "MonitorWatch", monitor).apply();
     }
     return monitorWatch;
   }
 
   public GraphSettings getGraphSettings(int appWidgetId) {
-    String prefix = String.format(Locale.ENGLISH, "%s(%d).", PREF_PREFIX, appWidgetId);
-    if (!preferences.contains(prefix + "AutoGraph")) {
-      // if we don't have settings for this graph, copy over the 'default' preferences.
-      GraphSettings gs = GraphSettings.get(preferences, PREF_PREFIX);
-      gs.save(preferences, prefix);
+    String legacy = String.format(Locale.ENGLISH, "%s(%d).", LEGACY_PREF_PREFIX, appWidgetId);
+    SharedPreferences preferences =
+        context.getSharedPreferences("Widget." + appWidgetId, Context.MODE_PRIVATE);
+    SharedPreferences legacyPreferences = PreferenceManager.getDefaultSharedPreferences(context);
+    if (legacyPreferences.contains(legacy + "AutoGraph")) {
+      // We have legacy preferences, time to migrate.
+      GraphSettings gs = GraphSettings.get(legacyPreferences, legacy);
+      gs.save(preferences);
+
+      // "Delete" the old preferences. It's not worth it to actually delete delete them, just delete
+      // enough so that we won't try to migrate again.
+      legacyPreferences.edit().remove(legacy + "AutoGraph").apply();
     }
-    return GraphSettings.get(
-        preferences, String.format(Locale.ENGLISH, "%s(%d).", PREF_PREFIX, appWidgetId));
+    if (!preferences.contains("AutoGraph")) {
+      // if we don't have settings for this graph, copy over the 'default' preferences.
+      GraphSettings gs = GraphSettings.get(preferences, "");
+      gs.save(preferences);
+    }
+    return GraphSettings.get(preferences, "");
   }
 
-  public static Settings get(Context context) {
-    SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-
-    Settings s = new Settings();
-    s.preferences = pref;
-    s.monitorWatch = pref.getBoolean(PREF_PREFIX + "MonitorWatch", true);
-    return s;
-  }
-
-  public void save(Context context) {
-    SharedPreferences pref = PreferenceManager.getDefaultSharedPreferences(context);
-    pref.edit()
-        .putBoolean(PREF_PREFIX + "MonitorWatch", monitorWatch)
-        .apply();
+  public static Settings get(@NonNull Context context) {
+    return new Settings(context);
   }
 
   public static class GraphSettings {
-    private String prefix;
     private int graphWidth;
     private int graphHeight;
     private boolean showWatchGraph;
@@ -160,7 +164,6 @@ public class Settings {
 
     public static GraphSettings get(SharedPreferences pref, String prefix) {
       GraphSettings gs = new GraphSettings();
-      gs.prefix = prefix;
       gs.autoGraphSize = pref.getBoolean(prefix + "AutoGraph", true);
       gs.graphWidth = pref.getInt(prefix + "GraphWidth", 40);
       gs.graphHeight = pref.getInt(prefix + "GraphHeight", 40);
@@ -173,7 +176,7 @@ public class Settings {
       gs.showBatteryEnergy = pref.getBoolean(prefix + "IncludeBatteryEnergy", false);
       gs.showTempGraph = pref.getBoolean(prefix + "IncludeTemp", false);
       gs.smoothTemp = pref.getBoolean(prefix + "SmoothTemp", false);
-      gs.tempCelsius = pref.getString(prefix + "TempUnits", "C").toLowerCase().equals("c");
+      gs.tempCelsius = pref.getString(prefix + "TempUnits", "C").equalsIgnoreCase("c");
       gs.numHours = Integer.parseInt(pref.getString(prefix + "NumHours", Integer.toString(48)));
       gs.showTimeScale = pref.getBoolean(prefix + "ShowTime", false);
       gs.showTimeLines = pref.getBoolean(prefix + "ShowTimeLines", false);
@@ -181,26 +184,26 @@ public class Settings {
       return gs;
     }
 
-    public void save(Context context) {
-      save(PreferenceManager.getDefaultSharedPreferences(context), prefix);
+    public void save(Context context, int appWidgetId) {
+      save(context.getSharedPreferences("Widget." + appWidgetId, Context.MODE_PRIVATE));
     }
 
-    public void save(SharedPreferences pref, String prefix) {
+    public void save(SharedPreferences pref) {
       pref.edit()
-          .putBoolean(prefix + "AutoGraph", autoGraphSize)
-          .putInt(prefix + "GraphWidth", graphWidth)
-          .putInt(prefix + "GraphHeight", graphHeight)
-          .putBoolean(prefix + "IncludeWatchGraph", showWatchGraph)
-          .putBoolean(pref + "IncludeBattery", showBatteryGraph)
-          .putBoolean(prefix + "IncludeBatteryCurrentInstant", showBatteryCurrentInstant)
-          .putBoolean(prefix + "IncludeBatteryCurrentAvg", showBatteryCurrentAvg)
-          .putBoolean(prefix + "IncludeBatteryEnergy", showBatteryEnergy)
-          .putBoolean(prefix + "IncludeTemp", showTempGraph)
-          .putString(prefix + "TempUnits", tempCelsius ? "C" : "F")
-          .putString(prefix + "NumHours", Integer.toString(numHours))
-          .putBoolean(prefix + "ShowTime", showTimeScale)
-          .putBoolean(prefix + "ShowTimeLines", showTimeLines)
-          .putBoolean(prefix + "ShowLastLevelLine", showLastLevelLine)
+          .putBoolean("AutoGraph", autoGraphSize)
+          .putInt("GraphWidth", graphWidth)
+          .putInt("GraphHeight", graphHeight)
+          .putBoolean("IncludeWatchGraph", showWatchGraph)
+          .putBoolean("IncludeBattery", showBatteryGraph)
+          .putBoolean("IncludeBatteryCurrentInstant", showBatteryCurrentInstant)
+          .putBoolean("IncludeBatteryCurrentAvg", showBatteryCurrentAvg)
+          .putBoolean("IncludeBatteryEnergy", showBatteryEnergy)
+          .putBoolean("IncludeTemp", showTempGraph)
+          .putString("TempUnits", tempCelsius ? "C" : "F")
+          .putString("NumHours", Integer.toString(numHours))
+          .putBoolean("ShowTime", showTimeScale)
+          .putBoolean("ShowTimeLines", showTimeLines)
+          .putBoolean("ShowLastLevelLine", showLastLevelLine)
           .apply();
     }
   }

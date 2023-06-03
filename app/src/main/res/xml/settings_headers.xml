@@ -1,33 +1,38 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<preference-headers xmlns:android="http://schemas.android.com/apk/res/android">
-  <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$GraphSettingsFragment"
-          android:icon="@drawable/ic_action_full_screen"
-          android:title="Graph Settings"
-          android:summary="Size and look of the graph widget." />
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+  <Preference
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$GraphSettingsFragment"
+      app:icon="@drawable/ic_action_full_screen"
+      app:title="Graph Settings"
+      app:summary="Size and look of the graph widget." />
 
-  <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$BatterySettingsFragment"
-          android:icon="@drawable/ic_battery"
-          android:title="Battery Graph"
-          android:summary="Settings for monitoring your phones battery." />
+  <Preference
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$BatterySettingsFragment"
+      app:icon="@drawable/ic_battery"
+      app:title="Battery Graph"
+      app:summary="Settings for monitoring your phones battery." />
 
-  <header android:id="@+id/watch_settings_header"
-          android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$WatchSettingsFragment"
-          android:icon="@drawable/ic_watch"
-          android:title="Watch Graph"
-          android:summary="Settings for monitoring your watches battery." />
+  <Preference
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$WatchSettingsFragment"
+      app:icon="@drawable/ic_watch"
+      app:title="Watch Graph"
+      app:summary="Settings for monitoring your watches battery." />
 
-  <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$TempSettingsFragment"
-          android:icon="@drawable/ic_temp"
-          android:title="Temperature Graph"
-          android:summary="Settings for monitoring your phones temperature." />
+  <Preference
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$TempSettingsFragment"
+      app:icon="@drawable/ic_temp"
+      app:title="Temperature Graph"
+      app:summary="Settings for monitoring your phones temperature." />
 
-  <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$NotificationSettingsFragment"
-          android:icon="@drawable/ic_action_alarms"
-          android:title="Notifications"
-          android:summary="Notifications for battery levels" />
+  <Preference
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$NotificationSettingsFragment"
+      app:icon="@drawable/ic_action_alarms"
+      app:title="Notifications"
+      app:summary="Notifications for battery levels" />
 
-  <header android:fragment="au.com.codeka.advbatterygraph.SettingsActivity$ExportFragment"
-          android:icon="@drawable/ic_share"
-          android:title="Export data"
-          android:summary="Export data to a .csv file." />
-</preference-headers>
+  <Preference
+      app:fragment="au.com.codeka.advbatterygraph.SettingsActivity$ExportFragment"
+      app:icon="@drawable/ic_share"
+      app:title="Export data"
+      app:summary="Export data to a .csv file." />
+</PreferenceScreen>

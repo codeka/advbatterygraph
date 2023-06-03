@@ -1,29 +1,28 @@
 package au.com.codeka.advbatterygraph;
 
 import android.content.Context;
-import android.preference.EditTextPreference;
 import android.text.InputType;
 import android.util.AttributeSet;
 
-/**
- * This is a version of {@see EditTextPreference} which works with integers instead.
- */
+import androidx.preference.EditTextPreference;
+
+/** This is a version of {@see EditTextPreference} which works with integers instead. */
 public class EditTextIntegerPreference extends EditTextPreference {
   private Integer integer;
 
   public EditTextIntegerPreference(Context context, AttributeSet attrs, int defStyle) {
     super(context, attrs, defStyle);
-    getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+//    getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
   }
 
   public EditTextIntegerPreference(Context context, AttributeSet attrs) {
     super(context, attrs);
-    getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+//    getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
   }
 
   public EditTextIntegerPreference(Context context) {
     super(context);
-    getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
+//    getEditText().setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_SIGNED);
   }
 
   @Override

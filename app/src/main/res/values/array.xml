@@ -4,10 +4,10 @@
     <item>Charging</item>
     <item>Discharging</item>
   </string-array>
-    <string-array name="devices">
-        <item>Phone</item>
-        <item>Watch</item>
-    </string-array>
+  <string-array name="devices">
+      <item>Phone</item>
+      <item>Watch</item>
+  </string-array>
 
   <string-array name="history_length_display">
     <item>8 hours</item>

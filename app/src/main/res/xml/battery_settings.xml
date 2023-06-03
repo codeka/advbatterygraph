@@ -1,40 +1,41 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-    <PreferenceCategory android:title="Battery Graph">
-        <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).IncludeBattery"
-            android:title="Battery Charge"
-            android:summary="Include a graph of battery charge percentage."
-            android:defaultValue="true" />
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+    <PreferenceCategory app:title="Battery Graph">
+        <CheckBoxPreference
+            app:key="IncludeBattery"
+            app:title="Battery Charge"
+            app:summary="Include a graph of battery charge percentage."
+            app:defaultValue="true" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="Current (Instantaneous)">
+    <PreferenceCategory app:title="Current (Instantaneous)">
         <CheckBoxPreference
-            android:key="au.com.codeka.advbatterygraph.(%d).IncludeBatteryCurrentInstant"
-            android:title="Show graph"
-            android:summary="Include a graph of instantaneous battery current in milliamperes."
-            android:defaultValue="false" />
+            app:key="IncludeBatteryCurrentInstant"
+            app:title="Show graph"
+            app:summary="Include a graph of instantaneous battery current in milliamperes."
+            app:defaultValue="false" />
         <CheckBoxPreference
-            android:key="au.com.codeka.advbatterygraph.(%d).SmoothBatteryCurrentInstant"
-            android:title="Smooth graph"
-            android:summary="Smooth the graph so it's not so noisy."
-            android:defaultValue="false" />
+            app:key="SmoothBatteryCurrentInstant"
+            app:title="Smooth graph"
+            app:summary="Smooth the graph so it's not so noisy."
+            app:defaultValue="false" />
         <CheckBoxPreference
-            android:key="au.com.codeka.advbatterygraph.(%d).InvertBatteryCurrentInstant"
-            android:title="Invert graph"
-            android:summary="Some devices return current that is the opposite of what you expect, use this to correct them."
-            android:defaultValue="false" />
+            app:key="InvertBatteryCurrentInstant"
+            app:title="Invert graph"
+            app:summary="Some devices return current that is the opposite of what you expect, use this to correct them."
+            app:defaultValue="false" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="Current (Average)">
+    <PreferenceCategory app:title="Current (Average)">
         <CheckBoxPreference
-            android:key="au.com.codeka.advbatterygraph.(%d).IncludeBatteryCurrentAvg"
-            android:title="Show graph"
-            android:summary="Include a graph of average battery current in milliamperes. The timeframe over which the average is calculated is device-dependent."
-            android:defaultValue="false" />
+            app:key="IncludeBatteryCurrentAvg"
+            app:title="Show graph"
+            app:summary="Include a graph of average battery current in milliamperes. The timeframe over which the average is calculated is device-dependent."
+            app:defaultValue="false" />
     </PreferenceCategory>
-    <PreferenceCategory android:title="Energy">
+    <PreferenceCategory app:title="Energy">
         <CheckBoxPreference
-            android:key="au.com.codeka.advbatterygraph.(%d).IncludeBatteryEnergy"
-            android:title="Show graph"
-            android:summary="Include a graph of battery energy in milliwatt-hours."
-            android:defaultValue="false" />
+            app:key="IncludeBatteryEnergy"
+            app:title="Show graph"
+            app:summary="Include a graph of battery energy in milliwatt-hours."
+            app:defaultValue="false" />
     </PreferenceCategory>
 </PreferenceScreen>

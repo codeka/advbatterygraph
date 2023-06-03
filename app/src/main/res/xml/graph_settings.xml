@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-  <PreferenceCategory android:title="Graph Size">
+<PreferenceScreen xmlns:app="http://schemas.android.com/apk/res-auto">
+  <PreferenceCategory app:title="Graph Size">
     <CheckBoxPreference
-        android:key="au.com.codeka.advbatterygraph.(%d).AutoGraph"
-        android:disableDependentsState="true"
-        android:title="Auto size graph"
-        android:summary="Calculate size of the graph automatically (doesn't always work well, due to limitations of the widget system)" />
+        app:key="AutoGraph"
+        app:disableDependentsState="true"
+        app:title="Auto size graph"
+        app:summary="Calculate size of the graph automatically (doesn't always work well, due to limitations of the widget system)" />
     <au.com.codeka.advbatterygraph.EditTextIntegerPreference
-        android:key="au.com.codeka.advbatterygraph.(%d).GraphWidth"
-        android:numeric="integer"
-        android:inputType="number"
-        android:title="Width"
-        android:summary="Width of the graph"
-        android:dependency="au.com.codeka.advbatterygraph.(%d).AutoGraph" />
+        app:key="GraphWidth"
+        app:title="Width"
+        app:summary="Width of the graph"
+        app:dependency="AutoGraph" />
     <au.com.codeka.advbatterygraph.EditTextIntegerPreference
-        android:key="au.com.codeka.advbatterygraph.(%d).GraphHeight"
-        android:numeric="integer"
-        android:inputType="number"
-        android:title="Height"
-        android:summary="Height of the graph"
-        android:dependency="au.com.codeka.advbatterygraph.(%d).AutoGraph" />
-    <ListPreference android:key="au.com.codeka.advbatterygraph.(%d).NumHours"
-                    android:title="History Length"
-                    android:entries="@array/history_length_display"
-                    android:entryValues="@array/history_length_values" />
+        app:key="GraphHeight"
+        app:title="Height"
+        app:summary="Height of the graph"
+        app:dependency="AutoGraph" />
+    <ListPreference
+        app:key="NumHours"
+        app:title="History Length"
+        app:entries="@array/history_length_display"
+        app:entryValues="@array/history_length_values" />
   </PreferenceCategory>
-  <PreferenceCategory android:title="Appearance">
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowTime"
-                        android:title="Show time indicators" />
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowTimeLines"
-                        android:title="Include time markers"
-                        android:dependency="au.com.codeka.advbatterygraph.(%d).ShowTime" />
-    <CheckBoxPreference android:key="au.com.codeka.advbatterygraph.(%d).ShowLastLevelLine"
-                        android:title="Draw line at last battery level"
-                        android:summary="Draw a horizontal line at the latest level for each graph"/>
+  <PreferenceCategory app:title="Appearance">
+    <CheckBoxPreference
+        app:key="ShowTime"
+        app:title="Show time indicators" />
+    <CheckBoxPreference
+        app:key="ShowTimeLines"
+        app:title="Include time markers"
+        app:dependency="ShowTime" />
+    <CheckBoxPreference
+        app:key="ShowLastLevelLine"
+        app:title="Draw line at last battery level"
+        app:summary="Draw a horizontal line at the latest level for each graph"/>
   </PreferenceCategory>
 </PreferenceScreen>

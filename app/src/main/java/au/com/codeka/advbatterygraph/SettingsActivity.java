@@ -3,11 +3,9 @@ package au.com.codeka.advbatterygraph;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
-import java.util.List;
 import java.util.Locale;
 
 import android.Manifest;
-import android.app.Fragment;
 import android.appwidget.AppWidgetManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -18,18 +16,20 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.BatteryManager;
-import android.os.Build;
 import android.os.Bundle;
-import android.preference.ListPreference;
-import android.preference.Preference;
-import android.preference.PreferenceActivity;
-import android.preference.PreferenceFragment;
-import android.preference.PreferenceGroup;
-import android.preference.PreferenceManager;
-import android.preference.PreferenceScreen;
 
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
+import androidx.fragment.app.Fragment;
+import androidx.preference.ListPreference;
+import androidx.preference.Preference;
+import androidx.preference.PreferenceFragmentCompat;
+import androidx.preference.PreferenceManager;
+import androidx.preference.PreferenceScreen;
 
 import android.util.Log;
 import android.view.ContextMenu;
@@ -43,17 +43,35 @@ import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
 
-public class SettingsActivity extends PreferenceActivity
-        implements SharedPreferences.OnSharedPreferenceChangeListener {
+public class SettingsActivity extends AppCompatActivity
+    implements SharedPreferences.OnSharedPreferenceChangeListener,
+    PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
   private static final String TAG = "SettingsActivity";
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
+    setContentView(R.layout.settings_activity);
 
     PreferenceManager.getDefaultSharedPreferences(this)
             .registerOnSharedPreferenceChangeListener(this);
-    WatchConnection.i.setup(this, watchConnectedRunnable);
+
+    HeadersSettingsFragment fragment = new HeadersSettingsFragment();
+    Bundle args = new Bundle();
+    args.putInt(
+        AppWidgetManager.EXTRA_APPWIDGET_ID,
+        getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID));
+    fragment.setArguments(args);
+
+    getSupportFragmentManager()
+        .beginTransaction()
+        .replace(R.id.settings_container, fragment)
+        .commit();
+
+    ActionBar actionBar = getSupportActionBar();
+    if (actionBar != null) {
+      actionBar.setDisplayHomeAsUpEnabled(true);
+    }
 
     Log.i("DEANH", "Settings fragment onCreate");
     if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
@@ -76,49 +94,49 @@ public class SettingsActivity extends PreferenceActivity
   @Override
   protected void onResume() {
     super.onResume();
-    WatchConnection.i.start();
-    WatchConnection.i.sendMessage(new WatchConnection.Message("/advbatterygraph/Start", null));
-
-    notifyWidgetRefresh();
   }
 
   @Override
   protected void onPause() {
     super.onPause();
+
+    notifyWidgetRefresh();
   }
 
   @Override
-  public void onBuildHeaders(List<PreferenceActivity.Header> target) {
-    loadHeadersFromResource(R.xml.settings_headers, target);
-    for (int i = 0; i < target.size(); i++) {
-      PreferenceActivity.Header header = target.get(i);
-      if (header.fragmentArguments == null) {
-        header.fragmentArguments = new Bundle();
-      }
-      header.fragmentArguments.putInt(AppWidgetManager.EXTRA_APPWIDGET_ID,
-          getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID));
+  public boolean onOptionsItemSelected(MenuItem item){
+    // TODO: check if it's the back button?
+    if (getSupportFragmentManager().getBackStackEntryCount() == 0) {
+      finish();
+    } else {
+      getSupportFragmentManager().popBackStack();
     }
-
-    if (!WatchConnection.i.isConnected()) {
-      // if we're not connected to a watch, don't show the watch headings
-      for (PreferenceActivity.Header header : target) {
-        if (header.id == R.id.watch_settings_header) {
-          target.remove(header);
-          break;
-        }
-      }
-    }
+    return true;
   }
 
-  /** Only allow fragments from within our package. */
   @Override
-  protected boolean isValidFragment(String fragmentName) {
-    return fragmentName.contains("au.com.codeka.advbatterygraph");
-  }
+  public boolean onPreferenceStartFragment(@NonNull PreferenceFragmentCompat caller, Preference pref) {
+    // Instantiate the new Fragment
+    final Bundle args = pref.getExtras();
+    final String fragmentName = pref.getFragment();
+    if (fragmentName == null) {
+      return false;
+    }
+    final Fragment fragment =
+        getSupportFragmentManager().getFragmentFactory().instantiate(
+            getClassLoader(), fragmentName);
+    // Add the widget ID so it shows the right settings.
+    args.putInt(
+        AppWidgetManager.EXTRA_APPWIDGET_ID,
+        getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID));
+    fragment.setArguments(args);
 
-  // Just invalidate the headers, the onBuildHeaders logic will recreate the headers with the watch
-  // enabled again.
-  private Runnable watchConnectedRunnable = this::invalidateHeaders;
+    getSupportFragmentManager().beginTransaction()
+        .replace(R.id.settings_container, fragment)
+        .addToBackStack(null)
+        .commit();
+    return true;
+  }
 
   /**
    * When preferences change, notify the graph to update itself.
@@ -129,7 +147,6 @@ public class SettingsActivity extends PreferenceActivity
   }
 
   private void notifyWidgetRefresh() {
-    Log.i("DEANH", "onSharedPreferenceChanged");
     BatteryGraphWidgetProvider.notifyRefresh(this, new int[]{
             getIntent().getExtras().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID)
     });
@@ -138,71 +155,36 @@ public class SettingsActivity extends PreferenceActivity
   /**
    * Base class for our various preference fragments.
    */
-  public static abstract class BasePreferenceFragment extends PreferenceFragment
+  public static abstract class BasePreferenceFragment extends PreferenceFragmentCompat
       implements SharedPreferences.OnSharedPreferenceChangeListener {
-    protected int mAppWidgetId;
+    protected int appWidgetId;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-      mAppWidgetId = getArguments().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID);
-    }
-
-    protected String getPrefix() {
-      if (mAppWidgetId == 0) {
-        return Settings.PREF_PREFIX;
-      } else {
-        return Settings.PREF_PREFIX + "(" + mAppWidgetId + ").";
+      if (getArguments() != null) {
+        appWidgetId = getArguments().getInt(AppWidgetManager.EXTRA_APPWIDGET_ID);
+        getPreferenceManager().setSharedPreferencesName("Widget." + appWidgetId);
+        getPreferenceManager().setSharedPreferencesMode(Context.MODE_PRIVATE);
       }
     }
 
     @Override
-    public void addPreferencesFromResource(int resourceId) {
-      super.addPreferencesFromResource(resourceId);
-      updateKeys(getPreferenceScreen());
+    public void onCreatePreferences(@Nullable Bundle savedInstanceState, @Nullable String rootKey) {
     }
 
-    private void updateKeys(PreferenceGroup parent) {
-      for (int i = 0; i < parent.getPreferenceCount(); i++) {
-        Preference pref = parent.getPreference(i);
-        boolean changed = false;
-        if (pref.getKey() != null && pref.getKey().contains("%d")) {
-          pref.setKey(String.format(pref.getKey(), mAppWidgetId));
-          changed = true;
-        }
-        if (pref.getDependency() != null && pref.getDependency().contains("%d")) {
-          pref.setDependency(String.format(pref.getDependency(), mAppWidgetId));
-          changed = true;
-        }
-        if (changed) {
-          reloadPreference(pref);
-        }
-        if (pref instanceof PreferenceGroup) {
-          updateKeys((PreferenceGroup) pref);
-        }
+    @Override
+    public void onDisplayPreferenceDialog(@NonNull Preference preference) {
+      if (getParentFragmentManager().findFragmentByTag(TAG) != null) {
+        return;
       }
-    }
 
-    /**
-     * This is kind of a dumb way to cause a preference to reload itself after changing one of
-     * its properties (such as 'Key').
-     * <p/>
-     * The "correct" solution to this problem would be to dynamically generate all my preference
-     * instances with the correct key to begin with, but that's ridiculously tedious.
-     */
-    @SuppressWarnings("unchecked")
-    private void reloadPreference(Preference pref) {
-      Class cls = pref.getClass();
-      while (cls != Preference.class) {
-        try {
-          Method m = cls.getDeclaredMethod("onSetInitialValue", boolean.class, Object.class);
-          m.setAccessible(true);
-          m.invoke(pref, true, null);
-          break;
-        } catch (Exception e) {
-          // Ignore.
-        }
-        cls = cls.getSuperclass();
+      if (preference instanceof NotificationSettingDialogPreference) {
+        final NotificationSettingDialogFragment f = NotificationSettingDialogFragment.newInstance(preference.getKey());
+        f.setTargetFragment(this, 0);
+        f.show(getParentFragmentManager(), TAG);
+      } else {
+        super.onDisplayPreferenceDialog(preference);
       }
     }
 
@@ -210,13 +192,19 @@ public class SettingsActivity extends PreferenceActivity
     public void onStart() {
       super.onStart();
       refreshSummaries();
-      getPreferenceManager().getSharedPreferences().registerOnSharedPreferenceChangeListener(this);
+      SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+      if (sharedPreferences != null) {
+        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+      }
     }
 
     @Override
     public void onStop() {
       super.onStop();
-      getPreferenceManager().getSharedPreferences().unregisterOnSharedPreferenceChangeListener(this);
+      SharedPreferences sharedPreferences = getPreferenceManager().getSharedPreferences();
+      if (sharedPreferences != null) {
+        sharedPreferences.unregisterOnSharedPreferenceChangeListener(this);
+      }
     }
 
     @Override
@@ -225,6 +213,19 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     protected abstract void refreshSummaries();
+  }
+
+  public static class HeadersSettingsFragment extends BasePreferenceFragment {
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+      addPreferencesFromResource(R.xml.settings_headers);
+    }
+
+    @Override
+    protected void refreshSummaries() {
+
+    }
   }
 
   public static class GraphSettingsFragment extends BasePreferenceFragment {
@@ -236,15 +237,20 @@ public class SettingsActivity extends PreferenceActivity
 
     @Override
     protected void refreshSummaries() {
-      EditTextIntegerPreference intpref =
-          (EditTextIntegerPreference) findPreference(getPrefix() + "GraphWidth");
-      intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
+      EditTextIntegerPreference intpref = findPreference("GraphWidth");
+      if (intpref != null) {
+        intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
+      }
 
-      intpref = (EditTextIntegerPreference) findPreference(getPrefix() + "GraphHeight");
-      intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
+      intpref = findPreference("GraphHeight");
+      if (intpref != null) {
+        intpref.setSummary(String.format(Locale.ENGLISH, "%d px", intpref.getInteger()));
+      }
 
-      ListPreference listpref = (ListPreference) findPreference(getPrefix() + "NumHours");
-      listpref.setSummary(listpref.getEntry());
+      ListPreference listpref = findPreference("NumHours");
+      if (listpref != null) {
+        listpref.setSummary(listpref.getEntry());
+      }
     }
   }
 
@@ -268,38 +274,45 @@ public class SettingsActivity extends PreferenceActivity
 
       // battery charge is only available on Android L (API level 21)+.
       Preference batteryCurrentInstantPref =
-          findPreference(getPrefix() + "IncludeBatteryCurrentInstant");
-      Preference batteryCurrentAvgPref = findPreference(getPrefix() + "IncludeBatteryCurrentAvg");
-      Preference batteryEnergyPref = findPreference(getPrefix() + "IncludeBatteryEnergy");
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-        BatteryManager batteryManager = (BatteryManager) getActivity()
-            .getSystemService(Context.BATTERY_SERVICE);
-        batteryCurrentInstantPref.setEnabled(batteryManager.getIntProperty(
-            BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) != Integer.MIN_VALUE);
-        batteryCurrentAvgPref.setEnabled(batteryManager.getIntProperty(
-            BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE) != Integer.MIN_VALUE);
-        batteryEnergyPref.setEnabled(batteryManager.getIntProperty(
-            BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) != Integer.MIN_VALUE);
-      } else {
-        Log.w(TAG, "Not Lollipop, no battery properties available.");
-        batteryCurrentInstantPref.setEnabled(false);
-        batteryCurrentAvgPref.setEnabled(false);
-        batteryEnergyPref.setEnabled(false);
+          findPreference("IncludeBatteryCurrentInstant");
+      Preference batteryCurrentAvgPref = findPreference("IncludeBatteryCurrentAvg");
+      Preference batteryEnergyPref = findPreference("IncludeBatteryEnergy");
+      if (batteryCurrentInstantPref == null || batteryCurrentAvgPref == null ||
+          batteryEnergyPref == null) {
+        return;
       }
+
+      BatteryManager batteryManager = (BatteryManager) requireActivity()
+          .getSystemService(Context.BATTERY_SERVICE);
+      batteryCurrentInstantPref.setEnabled(batteryManager.getIntProperty(
+          BatteryManager.BATTERY_PROPERTY_CURRENT_NOW) != Integer.MIN_VALUE);
+      batteryCurrentAvgPref.setEnabled(batteryManager.getIntProperty(
+          BatteryManager.BATTERY_PROPERTY_CURRENT_AVERAGE) != Integer.MIN_VALUE);
+      batteryEnergyPref.setEnabled(batteryManager.getIntProperty(
+          BatteryManager.BATTERY_PROPERTY_ENERGY_COUNTER) != Integer.MIN_VALUE);
       if (!batteryCurrentInstantPref.isEnabled()) {
-        batteryCurrentInstantPref.getSharedPreferences().edit()
-            .putBoolean(batteryCurrentInstantPref.getKey(), false)
-            .apply();
+        SharedPreferences sharedPreferences = batteryCurrentInstantPref.getSharedPreferences();
+        if (sharedPreferences != null) {
+          sharedPreferences.edit()
+              .putBoolean(batteryCurrentInstantPref.getKey(), false)
+              .apply();
+        }
       }
       if (!batteryCurrentAvgPref.isEnabled()) {
-        batteryCurrentAvgPref.getSharedPreferences().edit()
-            .putBoolean(batteryCurrentAvgPref.getKey(), false)
-            .apply();
+        SharedPreferences sharedPreferences = batteryCurrentAvgPref.getSharedPreferences();
+        if (sharedPreferences != null) {
+          sharedPreferences.edit()
+              .putBoolean(batteryCurrentAvgPref.getKey(), false)
+              .apply();
+        }
       }
       if (!batteryEnergyPref.isEnabled()) {
-        batteryEnergyPref.getSharedPreferences().edit()
-            .putBoolean(batteryEnergyPref.getKey(), false)
-            .apply();
+        SharedPreferences sharedPreferences = batteryEnergyPref.getSharedPreferences();
+        if (sharedPreferences != null) {
+          sharedPreferences.edit()
+              .putBoolean(batteryEnergyPref.getKey(), false)
+              .apply();
+        }
       }
     }
 
@@ -317,8 +330,10 @@ public class SettingsActivity extends PreferenceActivity
 
     @Override
     protected void refreshSummaries() {
-      ListPreference listpref = (ListPreference) findPreference(getPrefix() + "TempUnits");
-      listpref.setSummary(listpref.getEntry());
+      ListPreference listpref = findPreference("TempUnits");
+      if (listpref != null) {
+        listpref.setSummary(listpref.getEntry());
+      }
     }
   }
 
@@ -334,7 +349,7 @@ public class SettingsActivity extends PreferenceActivity
 
     @Override
     public View onCreateView(
-        LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        @NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
       final View v = super.onCreateView(inflater, container, savedInstanceState);
 
       final ListView lv = v.findViewById(android.R.id.list);
@@ -344,7 +359,8 @@ public class SettingsActivity extends PreferenceActivity
     }
 
     @Override
-    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+    public void onCreateContextMenu(
+        @NonNull ContextMenu menu, @NonNull View v, ContextMenuInfo menuInfo) {
       super.onCreateContextMenu(menu, v, menuInfo);
       new MenuInflater(getActivity()).inflate(R.menu.notification_settings_menu, menu);
     }
@@ -352,13 +368,10 @@ public class SettingsActivity extends PreferenceActivity
     @Override
     public boolean onContextItemSelected(MenuItem item) {
       int position = ((AdapterView.AdapterContextMenuInfo) item.getMenuInfo()).position;
-      switch (item.getItemId()) {
-        case R.id.delete:
-          deleteNotificationSetting(position + 1);
-          break;
-        case R.id.edit:
+      if (item.getItemId() == R.id.delete) {
+        deleteNotificationSetting(position + 1);
+      } else if (item.getItemId() == R.id.edit) {
           //showNotificationSetting(position + 1);
-          break;
       }
 
       return super.onOptionsItemSelected(item);
@@ -383,6 +396,7 @@ public class SettingsActivity extends PreferenceActivity
      */
     private void deleteNotificationSetting(int i) {
       SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+      if (prefs == null) return;
       SharedPreferences.Editor editor = prefs.edit();
 
       int last = i;
@@ -413,6 +427,10 @@ public class SettingsActivity extends PreferenceActivity
       screen.removeAll();
 
       SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+      if (prefs == null) {
+        return;
+      }
+
       for (int i = 1; ; i++) {
         String key = String.format(Locale.US, "notification:%d:percent", i);
         if (prefs.getInt(key, -1) < 0) {
@@ -424,20 +442,18 @@ public class SettingsActivity extends PreferenceActivity
         String device =
             prefs.getString(String.format(Locale.US, "notification:%d:device", i), "Phone");
 
-        NotificationSettingDialog pref = new NotificationSettingDialog(getActivity());
+        NotificationSettingDialogPreference pref = new NotificationSettingDialogPreference(getActivity());
         pref.setKey(String.format(Locale.US, "notification:%d", i));
         pref.setTitle(
             String.format(Locale.US, "%s %d%% and %s", device, percent, dir.toLowerCase()));
-        pref.setDialogLayoutResource(R.layout.notification_pref);
         pref.setPositiveButtonText("Save");
         pref.setNegativeButtonText("Cancel");
         screen.addPreference(pref);
       }
 
-      NotificationSettingDialog pref = new NotificationSettingDialog(getActivity());
+      NotificationSettingDialogPreference pref = new NotificationSettingDialogPreference(getActivity());
       pref.setKey("notification:new");
       pref.setTitle("Add Notification");
-      pref.setDialogLayoutResource(R.layout.notification_pref);
       pref.setPositiveButtonText("Add");
       pref.setNegativeButtonText("Cancel");
       screen.addPreference(pref);
@@ -474,7 +490,6 @@ public class SettingsActivity extends PreferenceActivity
   private static class ExportTask extends AsyncTask<Void, Void, ExportResult> {
     private final Context context;
     private final View view;
-
 
     public ExportTask(Context context, View view) {
       this.context = context;
