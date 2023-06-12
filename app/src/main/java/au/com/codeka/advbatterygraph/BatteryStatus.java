@@ -9,6 +9,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
@@ -202,11 +203,19 @@ public class BatteryStatus {
     }
   }
 
+  public static HashMap<String, Integer> getBluetoothDeviceIds(Context context) {
+    return new Store(context).loadBluetoothDevices();
+  }
+
+  public static int addBluetoothDevice(Context context, String deviceName) {
+    return new Store(context).addBluetoothDevice(deviceName);
+  }
+
   private static class Store extends SQLiteOpenHelper {
     private static final Object LOCK = new Object();
 
     public Store(Context context) {
-      super(context, "battery.db", null, 7);
+      super(context, "battery.db", null, 8);
     }
 
     /**
@@ -256,12 +265,70 @@ public class BatteryStatus {
             + " current_avg_milliamperes=current_avg_milliamperes / 1000,"
             + " energy_milliwatthours = energy_milliwatthours / 1000");
       }
+      if (oldVersion <= 7) {
+        db.execSQL("CREATE TABLE bluetooth_devices ("
+            + " name TEXT,"
+            + " device_id INTEGER)");
+      }
+    }
+
+    public HashMap<String, Integer> loadBluetoothDevices() {
+      synchronized (LOCK) {
+        Cursor cursor = null;
+        try (SQLiteDatabase db = getReadableDatabase()) {
+          cursor = db.query(
+              "bluetooth_devices", new String[]{"name", "device_id"},
+              null, null, null, null, null);
+
+          HashMap<String, Integer> devices = new HashMap<>();
+          while (cursor.moveToNext()) {
+            devices.put(cursor.getString(0), cursor.getInt(1));
+          }
+
+          return devices;
+        } catch (Exception e) {
+          Log.e(TAG, "Exception", e);
+          return new HashMap<>();
+        } finally {
+          if (cursor != null) cursor.close();
+        }
+      }
+    }
+
+    public int addBluetoothDevice(String deviceName) {
+      synchronized (LOCK) {
+        int nextId = 1;
+        Cursor cursor = null;
+        try (SQLiteDatabase db = getReadableDatabase()) {
+          cursor = db.rawQuery("SELECT MAX(device_id) FROM bluetooth_devices", new String[0]);
+
+          if (cursor.moveToNext()) {
+            nextId = cursor.getInt(0) + 1;
+          }
+        } catch (Exception e) {
+          Log.e(TAG, "Exception", e);
+          return -1;
+        } finally {
+          if (cursor != null) cursor.close();
+        }
+
+        try (SQLiteDatabase db = getWritableDatabase()) {
+          // insert a new cached value
+          ContentValues values = new ContentValues();
+          values.put("name", deviceName);
+          values.put("device_id", nextId);
+          db.insert("bluetooth_devices", null, values);
+        } catch (Exception e) {
+          // ignore errors... todo: log them
+        }
+
+        return nextId;
+      }
     }
 
     public void save(BatteryStatus status) {
       synchronized (LOCK) {
-        SQLiteDatabase db = getWritableDatabase();
-        try {
+        try (SQLiteDatabase db = getWritableDatabase()) {
           // insert a new cached value
           ContentValues values = new ContentValues();
           values.put("timestamp", status.date.getTime());
@@ -274,8 +341,6 @@ public class BatteryStatus {
           db.insert("battery_history", null, values);
         } catch (Exception e) {
           // ignore errors... todo: log them
-        } finally {
-          db.close();
         }
       }
     }
@@ -285,13 +350,10 @@ public class BatteryStatus {
      */
     public void deleteOlderThan(long timestamp) {
       synchronized (LOCK) {
-        SQLiteDatabase db = getWritableDatabase();
-        try {
+        try (SQLiteDatabase db = getWritableDatabase()) {
           db.delete("battery_history", "timestamp < " + timestamp, null);
         } catch (Exception e) {
           // ignore errors... todo: log them?
-        } finally {
-          db.close();
         }
       }
     }

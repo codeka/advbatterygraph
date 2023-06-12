@@ -1,9 +1,13 @@
 package au.com.codeka.advbatterygraph;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
 
 import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
 import androidx.preference.PreferenceManager;
 
 import java.util.Locale;
@@ -46,9 +50,9 @@ public class Settings {
   }
 
   public static class GraphSettings {
+    private SharedPreferences pref;
     private int graphWidth;
     private int graphHeight;
-    private boolean showWatchGraph;
     private boolean showBatteryGraph;
     private boolean showBatteryCurrentInstant;
     private boolean smoothBatteryCurrentInstant;
@@ -82,10 +86,6 @@ public class Settings {
 
     public void setGraphHeight(int height) {
       graphHeight = height;
-    }
-
-    public boolean showWatchGraph() {
-      return showWatchGraph;
     }
 
     public boolean showBatteryGraph() {
@@ -140,12 +140,16 @@ public class Settings {
       return showTimeLines;
     }
 
+    public boolean getBluetoothSettings(String deviceAddr) {
+      return pref.getBoolean(deviceAddr, false);
+    }
+
     public static GraphSettings get(SharedPreferences pref, String prefix) {
       GraphSettings gs = new GraphSettings();
+      gs.pref = pref;
       gs.autoGraphSize = pref.getBoolean(prefix + "AutoGraph", true);
       gs.graphWidth = pref.getInt(prefix + "GraphWidth", 40);
       gs.graphHeight = pref.getInt(prefix + "GraphHeight", 40);
-      gs.showWatchGraph = pref.getBoolean(prefix + "IncludeWatchGraph", true);
       gs.showBatteryGraph = pref.getBoolean(prefix + "IncludeBattery", true);
       gs.showBatteryCurrentInstant = pref.getBoolean(prefix + "IncludeBatteryCurrentInstant", false);
       gs.smoothBatteryCurrentInstant = pref.getBoolean(prefix + "SmoothBatteryCurrentInstant", false);
@@ -171,7 +175,6 @@ public class Settings {
           .putBoolean("AutoGraph", autoGraphSize)
           .putInt("GraphWidth", graphWidth)
           .putInt("GraphHeight", graphHeight)
-          .putBoolean("IncludeWatchGraph", showWatchGraph)
           .putBoolean("IncludeBattery", showBatteryGraph)
           .putBoolean("IncludeBatteryCurrentInstant", showBatteryCurrentInstant)
           .putBoolean("IncludeBatteryCurrentAvg", showBatteryCurrentAvg)

@@ -3,17 +3,22 @@ package au.com.codeka.advbatterygraph;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.TreeMap;
 
+import android.Manifest;
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.Config;
 import android.graphics.Canvas;
@@ -22,8 +27,12 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
+import androidx.core.app.ActivityCompat;
+import androidx.preference.CheckBoxPreference;
+
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -152,6 +161,31 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
   }
 
+  private HashMap<Integer, List<BatteryStatus>> getBluetoothDeviceBatteryHistory(Context context, Settings.GraphSettings graphSettings) {
+    HashMap<Integer, List<BatteryStatus>> history = new HashMap<>();
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        ActivityCompat.checkSelfPermission(
+            context, Manifest.permission.BLUETOOTH_CONNECT)
+            != PackageManager.PERMISSION_GRANTED) {
+      // Don't have permission, cannot return anything.
+      return history;
+    }
+
+
+    HashMap<String, Integer> knownDevices = BatteryStatus.getBluetoothDeviceIds(context);
+    for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+      if (graphSettings.getBluetoothSettings(device.getAddress())) {
+        Integer id = knownDevices.get(device.getName());
+        if (id == null) {
+          continue;
+        }
+        history.put(id, BatteryStatus.getHistory(context, id, graphSettings.getNumHours()));
+      }
+    }
+
+    return history;
+  }
+
   private Bitmap renderGraph(Context context, Settings.GraphSettings graphSettings,
       int numMinutes) {
     final int width = (int) (graphSettings.getGraphWidth() * pixelDensity);
@@ -170,12 +204,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(
         context, 0, graphSettings.getNumHours());
-    List<BatteryStatus> watchHistory;
-    if (graphSettings.showWatchGraph()) {
-      watchHistory = BatteryStatus.getHistory(context, 1, graphSettings.getNumHours());
-    } else {
-      watchHistory = new ArrayList<>();
-    }
+    HashMap<Integer, List<BatteryStatus>> bluetoothDeviceHistory = getBluetoothDeviceBatteryHistory(context, graphSettings);
 
     int numGraphsShowing = 0;
     List<GraphPoint> tempPoints = null;
@@ -183,8 +212,16 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     List<GraphPoint> batteryCurrentInstantPoints = null;
     List<GraphPoint> batteryCurrentAvgPoints = null;
     List<GraphPoint> batteryEnergyPoints = null;
-    List<GraphPoint> watchChargePoints = renderChargeGraph(watchHistory, numMinutes, width,
-        graphHeight, Color.argb(200, 0x00, 0xba, 0xff));
+    HashMap<Integer, List<GraphPoint>> bluetoothGraphs = new HashMap<>();
+    for (Integer id : bluetoothDeviceHistory.keySet()) {
+      List<BatteryStatus> history = bluetoothDeviceHistory.get(id);
+      if (history == null) continue;
+      bluetoothGraphs.put(
+          id,
+          renderChargeGraph(
+              // TODO: different color per graph
+              history, numMinutes, width, graphHeight, Color.argb(200, 0x00, 0xba, 0xff)));
+    }
 
     if (graphSettings.showBatteryGraph()) {
       batteryChargePoints = renderChargeGraph(batteryHistory, numMinutes, width,
@@ -243,9 +280,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
           }, 0, 0, 0);
       numGraphsShowing++;
     }
-    if (watchChargePoints.size() > 0) {
-      numGraphsShowing++;
-    }
+    numGraphsShowing += bluetoothGraphs.size();
     if (graphSettings.showTimeScale()) {
       showTimeScale(canvas, width, height, numMinutes, numGraphsShowing,
           graphSettings.showTimeLines());
@@ -263,8 +298,9 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     if (batteryEnergyPoints != null) {
       drawGraphBackground(batteryEnergyPoints, canvas, width, graphHeight);
     }
-    if (watchChargePoints.size() > 0) {
-      drawGraphBackground(watchChargePoints, canvas, width, graphHeight);
+    for (Integer id : bluetoothGraphs.keySet()) {
+      List<GraphPoint> points = bluetoothGraphs.get(id);
+      drawGraphBackground(points, canvas, width, graphHeight);
     }
     if (batteryChargePoints != null) {
       drawGraphBackground(batteryChargePoints, canvas, width, graphHeight);
@@ -282,11 +318,12 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     if (batteryEnergyPoints != null) {
       drawGraphLine(batteryEnergyPoints, canvas);
     }
-    if (watchChargePoints.size() > 0) {
+    for (Integer id : bluetoothGraphs.keySet()) {
+      List<GraphPoint> graphPoints = bluetoothGraphs.get(id);
       if (graphSettings.showLastLevelLine()) {
-        drawHorizontalLine(watchChargePoints, canvas);
+        drawHorizontalLine(graphPoints, canvas);
       }
-      drawGraphLine(watchChargePoints, canvas);
+      drawGraphLine(graphPoints, canvas);
     }
     if (batteryChargePoints != null) {
       if (graphSettings.showLastLevelLine()) {
@@ -298,7 +335,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     String text = "";
     if (graphSettings.showBatteryGraph() && batteryHistory.size() > 0) {
       text = String.format(Locale.US, "%d%%", (int) (batteryHistory.get(0).getChargeFraction() * 100.0f));
-    }
+    }/*
     if (watchHistory.size() > 0) {
       if (!text.isEmpty() && batteryChargePoints != null) {
         text = String.format(Locale.US, "P:%s W:%d%%",
@@ -307,7 +344,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         text = String.format(Locale.US, "%d%%",
             (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
       }
-    }
+    }*/
 
     if (graphSettings.showTemperatureGraph() && batteryHistory.size() > 0) {
       float celsius = batteryHistory.get(0).getBatteryTemp();

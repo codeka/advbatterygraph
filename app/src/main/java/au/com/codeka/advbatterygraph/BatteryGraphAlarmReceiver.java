@@ -1,13 +1,23 @@
 package au.com.codeka.advbatterygraph;
 
+import android.Manifest;
 import android.annotation.TargetApi;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.content.pm.PackageManager;
 import android.os.BatteryManager;
 import android.os.Build;
 import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
+import androidx.preference.CheckBoxPreference;
+
+import java.lang.reflect.Method;
+import java.util.HashMap;
 
 public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
   private static final String TAG = "advbattery.Alarm";
@@ -53,6 +63,37 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
     Log.d(TAG, String.format(
         "Battery status: %.2f%% %.1f°", fraction * 100.0f, temperature / 10.0f));
 
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+        ActivityCompat.checkSelfPermission(
+            context, Manifest.permission.BLUETOOTH_CONNECT)
+            == PackageManager.PERMISSION_GRANTED) {
+      // We have bluetooth permission, so can fetch status for them.
+      BatteryStatus.getBluetoothDeviceIds(context);
+
+      HashMap<String, Integer> knownDevices = BatteryStatus.getBluetoothDeviceIds(context);
+      for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+        try {
+          Integer id = knownDevices.get(device.getName());
+          if (id == null) {
+            id = BatteryStatus.addBluetoothDevice(context, device.getName());
+          }
+
+          Method method = device.getClass().getMethod("getBatteryLevel");
+          Object deviceLevel = method.invoke(device);
+          if (deviceLevel == null) {
+            continue;
+          }
+          status = new BatteryStatus.Builder(id)
+              .chargeFraction((float)((int) deviceLevel) / 100.0f)
+              .build();
+          BatteryStatus.save(context, status);
+          Log.i("DEANH", String.format("device %d (%s) %d", id, device.getName(), (int) deviceLevel));
+        } catch (Exception e) {
+          Log.i(TAG, "error getting battery level: " + e);
+        }
+      }
+    }
+
     // Notify the widget to update itself
     BatteryGraphWidgetProvider.notifyRefresh(context, null);
 
@@ -60,7 +101,6 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
     new Notifier().handleNotifications(context, 0, percent);
   }
 
-  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   private int getSpecialValue(BatteryManager batteryManager, int key) {
     int value = batteryManager.getIntProperty(key);
     if (value == Integer.MIN_VALUE) {

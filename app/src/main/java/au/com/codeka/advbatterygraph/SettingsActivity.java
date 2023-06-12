@@ -16,6 +16,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.BatteryManager;
+import android.os.Build;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -25,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
 import androidx.fragment.app.Fragment;
+import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
 import androidx.preference.PreferenceFragmentCompat;
@@ -45,8 +47,11 @@ import android.widget.TextView;
 
 public class SettingsActivity extends AppCompatActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener,
-    PreferenceFragmentCompat.OnPreferenceStartFragmentCallback {
+    PreferenceFragmentCompat.OnPreferenceStartFragmentCallback,
+    ActivityCompat.OnRequestPermissionsResultCallback {
   private static final String TAG = "SettingsActivity";
+
+  private static final int BLUETOOTH_PERMISSION_TAG = 694724;
 
   @Override
   protected void onCreate(Bundle savedInstanceState) {
@@ -71,23 +76,6 @@ public class SettingsActivity extends AppCompatActivity
     ActionBar actionBar = getSupportActionBar();
     if (actionBar != null) {
       actionBar.setDisplayHomeAsUpEnabled(true);
-    }
-
-    Log.i("DEANH", "Settings fragment onCreate");
-    if (ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-      ActivityCompat.requestPermissions(this, new String[] { Manifest.permission.BLUETOOTH_CONNECT }, 975364);
-
-      return;
-    }
-    for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-      Log.i("DEANH", "got device " + device.getName() + " - " + device);
-      try {
-        Method method = device.getClass().getMethod("getBatteryLevel");
-        Object level = method.invoke(device);
-        Log.i("DEANH", "    battery level: " + level);
-      } catch (Exception e) {
-        Log.i("DEANH", "error getting battery level: " + e.toString());
-      }
     }
   }
 
@@ -136,6 +124,16 @@ public class SettingsActivity extends AppCompatActivity
         .addToBackStack(null)
         .commit();
     return true;
+  }
+
+  @Override
+  public void onRequestPermissionsResult(
+      int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+    if (requestCode == BLUETOOTH_PERMISSION_TAG) {
+      // TODO: jump back to the bluetooth settings fragment
+    }
   }
 
   /**
@@ -259,6 +257,24 @@ public class SettingsActivity extends AppCompatActivity
     public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
       addPreferencesFromResource(R.xml.bluetooth_settings);
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
+          ActivityCompat.checkSelfPermission(
+              requireActivity(), Manifest.permission.BLUETOOTH_CONNECT)
+              != PackageManager.PERMISSION_GRANTED) {
+          ActivityCompat.requestPermissions(
+              requireActivity(),
+              new String[] { Manifest.permission.BLUETOOTH_CONNECT },
+              BLUETOOTH_PERMISSION_TAG);
+        return;
+      }
+
+      for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+        CheckBoxPreference pref = new CheckBoxPreference(requireActivity());
+        pref.setKey(device.getAddress());
+        pref.setTitle(device.getName());
+        getPreferenceScreen().addPreference(pref);
+      }
     }
 
     @Override
@@ -442,7 +458,8 @@ public class SettingsActivity extends AppCompatActivity
         String device =
             prefs.getString(String.format(Locale.US, "notification:%d:device", i), "Phone");
 
-        NotificationSettingDialogPreference pref = new NotificationSettingDialogPreference(getActivity());
+        NotificationSettingDialogPreference pref =
+            new NotificationSettingDialogPreference(getActivity());
         pref.setKey(String.format(Locale.US, "notification:%d", i));
         pref.setTitle(
             String.format(Locale.US, "%s %d%% and %s", device, percent, dir.toLowerCase()));
@@ -451,7 +468,8 @@ public class SettingsActivity extends AppCompatActivity
         screen.addPreference(pref);
       }
 
-      NotificationSettingDialogPreference pref = new NotificationSettingDialogPreference(getActivity());
+      NotificationSettingDialogPreference pref =
+          new NotificationSettingDialogPreference(getActivity());
       pref.setKey("notification:new");
       pref.setTitle("Add Notification");
       pref.setPositiveButtonText("Add");
