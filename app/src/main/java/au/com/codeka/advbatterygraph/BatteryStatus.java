@@ -207,6 +207,15 @@ public class BatteryStatus {
     return new Store(context).loadBluetoothDevices();
   }
 
+  public static HashMap<Integer, String> getBluetoothDeviceNames(Context context) {
+    HashMap<String, Integer> nameToDevice = new Store(context).loadBluetoothDevices();
+    HashMap<Integer, String> deviceIdToName = new HashMap<>();
+    for (String name : nameToDevice.keySet()) {
+      deviceIdToName.put(nameToDevice.get(name), name);
+    }
+    return deviceIdToName;
+  }
+
   public static int addBluetoothDevice(Context context, String deviceName) {
     return new Store(context).addBluetoothDevice(deviceName);
   }

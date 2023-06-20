@@ -27,12 +27,17 @@ import android.graphics.Paint;
 import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
+import android.graphics.drawable.Drawable;
+import android.graphics.text.MeasuredText;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
 import androidx.preference.CheckBoxPreference;
 
+import android.text.Spannable;
+import android.text.SpannableString;
+import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -41,11 +46,27 @@ import android.widget.RemoteViews;
  */
 public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   private static final String TAG = "BatteryGraphWidget";
-  private TreeMap<Integer, RemoteViews> remoteViews;
 
-  /** Don't query the watch more often than this number of milliseconds. */
-  private static final long MIN_WATCH_QUERY_DELAY_MS = 4L * 60 * 1000;
-  private static  long lastWatchMessageTime;
+  // The status message on the bottom-right of the graph contains a mixture of text and icons, so
+  // we represent it using an array of StatusMessageEntry objects.
+  private static class StatusMessageEntry {
+    public String text;
+    public Drawable icon;
+
+    public static StatusMessageEntry text(String text) {
+      StatusMessageEntry entry = new StatusMessageEntry();
+      entry.text = text;
+      return entry;
+    }
+
+    public static StatusMessageEntry icon(Context context, int resId) {
+      StatusMessageEntry entry = new StatusMessageEntry();
+      entry.icon = context.getDrawable(resId);
+      return entry;
+    }
+  }
+
+  private TreeMap<Integer, RemoteViews> remoteViews;
 
   private float pixelDensity;
   private Settings settings;
@@ -174,7 +195,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     HashMap<String, Integer> knownDevices = BatteryStatus.getBluetoothDeviceIds(context);
     for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-      if (graphSettings.getBluetoothSettings(device.getAddress())) {
+      Settings.BluetoothDeviceSettings deviceSettings = graphSettings.getBluetoothDeviceSettings(device.getName());
+      if (deviceSettings != null && deviceSettings.showGraph()) {
         Integer id = knownDevices.get(device.getName());
         if (id == null) {
           continue;
@@ -204,7 +226,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     List<BatteryStatus> batteryHistory = BatteryStatus.getHistory(
         context, 0, graphSettings.getNumHours());
-    HashMap<Integer, List<BatteryStatus>> bluetoothDeviceHistory = getBluetoothDeviceBatteryHistory(context, graphSettings);
+    HashMap<Integer, List<BatteryStatus>> bluetoothDeviceHistory =
+        getBluetoothDeviceBatteryHistory(context, graphSettings);
 
     int numGraphsShowing = 0;
     List<GraphPoint> tempPoints = null;
@@ -332,20 +355,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       drawGraphLine(batteryChargePoints, canvas);
     }
 
-    String text = "";
-    if (graphSettings.showBatteryGraph() && batteryHistory.size() > 0) {
-      text = String.format(Locale.US, "%d%%", (int) (batteryHistory.get(0).getChargeFraction() * 100.0f));
-    }/*
-    if (watchHistory.size() > 0) {
-      if (!text.isEmpty() && batteryChargePoints != null) {
-        text = String.format(Locale.US, "P:%s W:%d%%",
-            text, (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
-      } else {
-        text = String.format(Locale.US, "%d%%",
-            (int) (watchHistory.get(0).getChargeFraction() * 100.0f));
-      }
-    }*/
-
+    ArrayList<StatusMessageEntry> statusMessage = new ArrayList<>();
     if (graphSettings.showTemperatureGraph() && batteryHistory.size() > 0) {
       float celsius = batteryHistory.get(0).getBatteryTemp();
       String temp;
@@ -354,38 +364,65 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       } else {
         temp = String.format(Locale.US, "%.1f°", celsius * 9.0f / 5.0f + 32.0f);
       }
-      if (!text.isEmpty()) {
-        text = temp + " - " + text;
-      } else {
-        text = temp;
-      }
+      statusMessage.add(StatusMessageEntry.icon(context, R.drawable.ic_temp));
+      statusMessage.add(StatusMessageEntry.text(temp));
     }
 
+    boolean hasCurrentInstant = false;
     if (graphSettings.showBatteryCurrentInstant() && batteryHistory.size() > 0) {
       String curr = String.format(Locale.US,
           "%.2f mA (inst)", batteryHistory.get(0).getBatteryCurrentInstant());
-      if (!text.isEmpty()) {
-        text += " - ";
+      if (statusMessage.size() > 0) {
+        statusMessage.add(StatusMessageEntry.text(" - "));
       }
-      text += curr;
+      statusMessage.add(StatusMessageEntry.icon(context, R.drawable.ic_current_inst));
+      statusMessage.add(StatusMessageEntry.text(curr));
+      hasCurrentInstant = true;
     }
 
     if (graphSettings.showBatteryCurrentAvg() && batteryHistory.size() > 0) {
       String curr = String.format(Locale.US, "%d mA (avg)",
           (int) batteryHistory.get(0).getBatteryCurrentAvg());
-      if (!text.isEmpty()) {
-        text += " - ";
+      if (!hasCurrentInstant) {
+        statusMessage.add(StatusMessageEntry.icon(context, R.drawable.ic_current_inst));
       }
-      text += curr;
+      statusMessage.add(StatusMessageEntry.text(curr));
     }
 
     if (graphSettings.showBatteryEnergy() && batteryHistory.size() > 0) {
       String curr = String.format(Locale.US, "%d mWh",
           (int) batteryHistory.get(0).getBatteryEnergy());
-      if (!text.isEmpty()) {
-        text += " - ";
-      }
-      text += curr;
+      statusMessage.add(StatusMessageEntry.icon(context, R.drawable.ic_battery_energy));
+      statusMessage.add(StatusMessageEntry.text(curr));
+    }
+
+    if (graphSettings.showBatteryGraph() && batteryHistory.size() > 0) {
+      statusMessage.add(StatusMessageEntry.icon(context, R.drawable.ic_device_phone));
+      statusMessage.add(
+          StatusMessageEntry.text(
+              String.format(
+                  Locale.US,
+                  "%d%%",
+                  (int) (batteryHistory.get(0).getChargeFraction() * 100.0f))));
+    }
+
+    HashMap<Integer, String> deviceNames = BatteryStatus.getBluetoothDeviceNames(context);
+    for (Integer deviceId : bluetoothDeviceHistory.keySet()) {
+      List<BatteryStatus> deviceHistory = bluetoothDeviceHistory.get(deviceId);
+      if (deviceHistory.size() == 0) continue;
+
+      String deviceName = deviceNames.get(deviceId);
+      if (deviceName == null) continue;
+
+      Settings.BluetoothDeviceSettings deviceSettings =
+          graphSettings.getBluetoothDeviceSettings(deviceName);
+      if (deviceSettings == null) continue;
+      statusMessage.add(StatusMessageEntry.icon(context, deviceSettings.getIconResId()));
+      statusMessage.add(
+          StatusMessageEntry.text(
+              String.format(
+                  Locale.US, "%d%%",
+                  (int) (deviceHistory.get(0).getChargeFraction() * 100.0f))));
     }
 
     Paint paint = new Paint();
@@ -394,8 +431,23 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     paint.setColor(Color.WHITE);
     paint.setStyle(Style.FILL);
     paint.setStrokeWidth(pixelDensity);
-    float textWidth = paint.measureText(text);
-    canvas.drawText(text, width - textWidth - 4, graphHeight - 4, paint);
+    int iconSize = 64;
+    float x = width - 4;
+    float y = graphHeight - 4;
+    for (int i = statusMessage.size() - 1; i >= 0; i--) {
+      StatusMessageEntry entry = statusMessage.get(i);
+      if (entry.text != null) {
+        float textWidth = paint.measureText(entry.text);
+        x -= textWidth;
+        canvas.drawText(entry.text, x, y, paint);
+        x -= 8;
+      } else if (entry.icon != null) {
+        x -= iconSize;
+        entry.icon.setBounds((int) x, (int) y - iconSize, (int) x + iconSize, (int) y);
+        entry.icon.draw(canvas);
+        x -= 16;
+      }
+    }
 
     return bmp;
   }

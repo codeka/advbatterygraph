@@ -3,9 +3,11 @@ package au.com.codeka.advbatterygraph;
 import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Locale;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.appwidget.AppWidgetManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -29,6 +31,7 @@ import androidx.fragment.app.Fragment;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
 import androidx.preference.Preference;
+import androidx.preference.PreferenceCategory;
 import androidx.preference.PreferenceFragmentCompat;
 import androidx.preference.PreferenceManager;
 import androidx.preference.PreferenceScreen;
@@ -44,6 +47,8 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
+
+import com.google.android.gms.common.internal.Objects;
 
 public class SettingsActivity extends AppCompatActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener,
@@ -181,6 +186,10 @@ public class SettingsActivity extends AppCompatActivity
         final NotificationSettingDialogFragment f = NotificationSettingDialogFragment.newInstance(preference.getKey());
         f.setTargetFragment(this, 0);
         f.show(getParentFragmentManager(), TAG);
+      } else if (preference instanceof IconPreference) {
+        final IconDialogFragment f = IconDialogFragment.newInstance(preference.getKey());
+        f.setTargetFragment(this, 0);
+        f.show(getParentFragmentManager(), TAG);
       } else {
         super.onDisplayPreferenceDialog(preference);
       }
@@ -252,11 +261,76 @@ public class SettingsActivity extends AppCompatActivity
     }
   }
 
+  /** Preference fragment for a single bluetooth device. */
+  @SuppressLint("MissingPermission") // We wouldn't get here if we don't have permission.
+  public static class BluetoothDeviceSettingsFragment extends BasePreferenceFragment {
+    @Nullable
+    private BluetoothDevice getDevice(int deviceId) {
+      HashMap<String, Integer> deviceIds = BatteryStatus.getBluetoothDeviceIds(requireContext());
+      String deviceName = null;
+      for (String name : deviceIds.keySet()) {
+        if (Objects.equal(deviceIds.get(name), deviceId)) {
+          deviceName = name;
+        }
+      }
+      if (deviceName == null) {
+        return null;
+      }
+      for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
+        if (deviceName.equals(device.getName())) {
+          return device;
+        }
+      }
+
+      return null;
+    }
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+      super.onCreate(savedInstanceState);
+      setPreferenceScreen(getPreferenceManager().createPreferenceScreen(requireContext()));
+
+      Bundle args = getArguments();
+      BluetoothDevice device = null;
+      if (args != null) {
+        device = getDevice(args.getInt("deviceId"));
+      }
+      if (device == null) {
+        // This shouldn't happen, we've already checked everything.
+        Log.e(TAG, "Device is unexpectedly null");
+        getParentFragmentManager().popBackStack();
+        return;
+      }
+
+      PreferenceCategory category = new PreferenceCategory(requireContext());
+      category.setTitle(device.getName());
+      getPreferenceScreen().addPreference(category);
+
+      CheckBoxPreference enabledPref = new CheckBoxPreference(requireContext());
+      enabledPref.setKey(device.getName());
+      enabledPref.setTitle("Show graph");
+      getPreferenceScreen().addPreference(enabledPref);
+
+      IconPreference iconPref = new IconPreference(requireContext());
+      iconPref.setKey(device.getName() + ".Icon");
+      iconPref.setTitle("Icon");
+      getPreferenceScreen().addPreference(iconPref);
+    }
+
+    @Override
+    protected void refreshSummaries() {
+    }
+  }
+
   public static class BluetoothSettingsFragment extends BasePreferenceFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-      addPreferencesFromResource(R.xml.bluetooth_settings);
+      setPreferenceScreen(getPreferenceManager().createPreferenceScreen(requireContext()));
+
+      PreferenceCategory category = new PreferenceCategory(requireActivity());
+      category.setTitle("Bluetooth Devices");
+      getPreferenceScreen().addPreference(category);
 
       if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
           ActivityCompat.checkSelfPermission(
@@ -269,9 +343,16 @@ public class SettingsActivity extends AppCompatActivity
         return;
       }
 
+      HashMap<String, Integer> deviceIds = BatteryStatus.getBluetoothDeviceIds(requireContext());
       for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-        CheckBoxPreference pref = new CheckBoxPreference(requireActivity());
-        pref.setKey(device.getAddress());
+        Integer deviceId = deviceIds.get(device.getName());
+        if (deviceId == null) {
+          deviceId = BatteryStatus.addBluetoothDevice(requireActivity(), device.getName());
+        }
+
+        Preference pref = new Preference(requireActivity());
+        pref.setFragment(BluetoothDeviceSettingsFragment.class.getName());
+        pref.getExtras().putInt("deviceId", deviceId);
         pref.setTitle(device.getName());
         getPreferenceScreen().addPreference(pref);
       }

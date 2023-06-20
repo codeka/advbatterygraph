@@ -1,6 +1,5 @@
 package au.com.codeka.advbatterygraph;
 
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.ArrayAdapter;

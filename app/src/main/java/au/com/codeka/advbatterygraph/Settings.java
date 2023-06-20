@@ -140,8 +140,8 @@ public class Settings {
       return showTimeLines;
     }
 
-    public boolean getBluetoothSettings(String deviceAddr) {
-      return pref.getBoolean(deviceAddr, false);
+    public BluetoothDeviceSettings getBluetoothDeviceSettings(String deviceName) {
+      return new BluetoothDeviceSettings(pref, deviceName);
     }
 
     public static GraphSettings get(SharedPreferences pref, String prefix) {
@@ -186,6 +186,32 @@ public class Settings {
           .putBoolean("ShowTimeLines", showTimeLines)
           .putBoolean("ShowLastLevelLine", showLastLevelLine)
           .apply();
+    }
+  }
+
+  public static class BluetoothDeviceSettings {
+    private final SharedPreferences pref;
+    private final String deviceName;
+
+    public BluetoothDeviceSettings(SharedPreferences pref, String deviceName) {
+      this.pref = pref;
+      this.deviceName = deviceName;
+    }
+
+    public boolean showGraph() {
+      return pref.getBoolean(deviceName, false);
+    }
+
+    public int getIconResId() {
+      String iconName = pref.getString(deviceName + ".Icon", "");
+      if (iconName.isEmpty()) {
+        return R.drawable.ic_device_watch;
+      }
+      Integer iconId = IconPreference.icons.get(iconName);
+      if (iconId == null) {
+        return R.drawable.ic_device_watch;
+      }
+      return iconId;
     }
   }
 }
