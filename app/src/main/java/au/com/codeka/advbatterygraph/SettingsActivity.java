@@ -16,6 +16,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.BatteryManager;
@@ -28,6 +30,7 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.FileProvider;
+import androidx.core.graphics.drawable.DrawableCompat;
 import androidx.fragment.app.Fragment;
 import androidx.preference.CheckBoxPreference;
 import androidx.preference.ListPreference;
@@ -351,6 +354,8 @@ public class SettingsActivity extends AppCompatActivity
         return;
       }
 
+      SharedPreferences prefs = getPreferenceManager().getSharedPreferences();
+
       HashMap<String, Integer> deviceIds = BatteryStatus.getBluetoothDeviceIds(requireContext());
       for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
         Integer deviceId = deviceIds.get(device.getName());
@@ -362,6 +367,20 @@ public class SettingsActivity extends AppCompatActivity
         pref.setFragment(BluetoothDeviceSettingsFragment.class.getName());
         pref.getExtras().putInt("deviceId", deviceId);
         pref.setTitle(device.getName());
+        if (prefs != null) {
+          String iconName = prefs.getString(device.getName() + ".Icon", "");
+          int color = prefs.getInt(device.getName() + ".Color", Color.argb(200, 0x00, 0xba, 0xff));
+          Integer resId = IconPreference.icons.get(iconName);
+          if (resId != null) {
+            Drawable iconDrawable = DrawableCompat.wrap(requireContext().getDrawable(resId));
+            DrawableCompat.setTint(iconDrawable, color);
+            pref.setIcon(iconDrawable);
+          }
+
+          if (prefs.getBoolean(device.getName(), false)) {
+            pref.setSummary("Enabled");
+          }
+        }
         getPreferenceScreen().addPreference(pref);
       }
     }
