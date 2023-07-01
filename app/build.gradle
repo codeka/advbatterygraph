@@ -4,9 +4,10 @@ android {
   compileSdkVersion 31
 
     defaultConfig {
-    applicationId "au.com.codeka.advbatterygraph"
-    minSdkVersion 29
-    targetSdkVersion 31  }
+      applicationId "au.com.codeka.advbatterygraph"
+      minSdkVersion 29
+      targetSdkVersion 31
+    }
 
 
     compileOptions {
@@ -29,6 +30,5 @@ android {
 dependencies {
   implementation 'androidx.legacy:legacy-support-v4:1.0.0'
   implementation 'androidx.preference:preference:1.2.0'
-  implementation 'com.google.android.gms:play-services-wearable:17.1.0'
-  wearApp project(':wear')
+  implementation "com.github.skydoves:colorpickerview:2.2.4"
 }

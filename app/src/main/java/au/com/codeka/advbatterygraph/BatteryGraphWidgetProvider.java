@@ -228,6 +228,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         context, 0, graphSettings.getNumHours());
     HashMap<Integer, List<BatteryStatus>> bluetoothDeviceHistory =
         getBluetoothDeviceBatteryHistory(context, graphSettings);
+    HashMap<Integer, String> bluetoothDeviceNames = BatteryStatus.getBluetoothDeviceNames(context);
 
     int numGraphsShowing = 0;
     List<GraphPoint> tempPoints = null;
@@ -239,11 +240,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     for (Integer id : bluetoothDeviceHistory.keySet()) {
       List<BatteryStatus> history = bluetoothDeviceHistory.get(id);
       if (history == null) continue;
+      int color = graphSettings.getBluetoothDeviceSettings(bluetoothDeviceNames.get(id)).getColor();
       bluetoothGraphs.put(
           id,
           renderChargeGraph(
-              // TODO: different color per graph
-              history, numMinutes, width, graphHeight, Color.argb(200, 0x00, 0xba, 0xff)));
+              history, numMinutes, width, graphHeight, color));
     }
 
     if (graphSettings.showBatteryGraph()) {
@@ -409,7 +410,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     HashMap<Integer, String> deviceNames = BatteryStatus.getBluetoothDeviceNames(context);
     for (Integer deviceId : bluetoothDeviceHistory.keySet()) {
       List<BatteryStatus> deviceHistory = bluetoothDeviceHistory.get(deviceId);
-      if (deviceHistory.size() == 0) continue;
+      if (deviceHistory == null || deviceHistory.size() == 0) continue;
+      if (deviceHistory.get(0).getChargeFraction() < 0.0) continue;
 
       String deviceName = deviceNames.get(deviceId);
       if (deviceName == null) continue;

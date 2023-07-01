@@ -213,5 +213,9 @@ public class Settings {
       }
       return iconId;
     }
+
+    public int getColor() {
+      return pref.getInt(deviceName + ".Color", 0);
+    }
   }
 }

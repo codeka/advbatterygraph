@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/background"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <com.skydoves.colorpickerview.ColorPickerView
+        android:id="@+id/color_picker"
+        android:layout_width="300dp"
+        android:layout_height="300dp"
+        android:layout_centerHorizontal="true" />
+
+    <com.skydoves.colorpickerview.sliders.AlphaSlideBar
+        android:id="@+id/alpha_slider"
+        android:layout_width="300dp"
+        android:layout_height="48dp"
+        android:layout_below="@id/color_picker"
+        android:layout_marginTop="24dp"
+        android:layout_centerHorizontal="true"
+        app:selector_AlphaSlideBar="@drawable/wheel" />
+
+    <com.skydoves.colorpickerview.sliders.BrightnessSlideBar
+        android:id="@+id/brightness_slider"
+        android:layout_width="300dp"
+        android:layout_height="48dp"
+        android:layout_below="@id/alpha_slider"
+        android:layout_marginTop="24dp"
+        android:layout_centerHorizontal="true"
+        app:selector_BrightnessSlider="@drawable/wheel" />
+
+    <com.skydoves.colorpickerview.AlphaTileView
+        android:id="@+id/alpha_tile_view"
+        android:layout_width="55dp"
+        android:layout_height="55dp"
+        android:layout_below="@id/brightness_slider"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="24dp"
+        app:tileSize="20" />
+    <TextView
+        android:id="@+id/color_value"
+        android:layout_width="wrap_content"
+        android:layout_height="55dp"
+        android:layout_below="@id/alpha_tile_view"
+        android:textSize="20sp"
+        android:layout_centerHorizontal="true"
+        tools:text="#FF012345"/>
+</RelativeLayout>

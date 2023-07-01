@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.Objects;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -47,8 +48,6 @@ import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
-
-import com.google.android.gms.common.internal.Objects;
 
 public class SettingsActivity extends AppCompatActivity
     implements SharedPreferences.OnSharedPreferenceChangeListener,
@@ -190,6 +189,10 @@ public class SettingsActivity extends AppCompatActivity
         final IconDialogFragment f = IconDialogFragment.newInstance(preference.getKey());
         f.setTargetFragment(this, 0);
         f.show(getParentFragmentManager(), TAG);
+      } else if (preference instanceof ColorPreference) {
+        final ColorDialogFragment f = ColorDialogFragment.newInstance(preference.getKey());
+        f.setTargetFragment(this, 0);
+        f.show(getParentFragmentManager(), TAG);
       } else {
         super.onDisplayPreferenceDialog(preference);
       }
@@ -269,7 +272,7 @@ public class SettingsActivity extends AppCompatActivity
       HashMap<String, Integer> deviceIds = BatteryStatus.getBluetoothDeviceIds(requireContext());
       String deviceName = null;
       for (String name : deviceIds.keySet()) {
-        if (Objects.equal(deviceIds.get(name), deviceId)) {
+        if (Objects.equals(deviceIds.get(name), deviceId)) {
           deviceName = name;
         }
       }
@@ -315,6 +318,11 @@ public class SettingsActivity extends AppCompatActivity
       iconPref.setKey(device.getName() + ".Icon");
       iconPref.setTitle("Icon");
       getPreferenceScreen().addPreference(iconPref);
+
+      ColorPreference colorPref = new ColorPreference(requireContext());
+      colorPref.setKey(device.getName() + ".Color");
+      colorPref.setTitle("Color");
+      getPreferenceScreen().addPreference(colorPref);
     }
 
     @Override
