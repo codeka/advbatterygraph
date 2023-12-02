@@ -471,13 +471,13 @@ public class SettingsActivity extends AppCompatActivity
       refreshNotificationPrefs();
     }
 
+    @NonNull
     @Override
     public View onCreateView(
         @NonNull LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
       final View v = super.onCreateView(inflater, container, savedInstanceState);
 
-      final ListView lv = v.findViewById(android.R.id.list);
-      registerForContextMenu(lv);
+      registerForContextMenu(getListView());
 
       return v;
     }
@@ -485,7 +485,6 @@ public class SettingsActivity extends AppCompatActivity
     @Override
     public void onCreateContextMenu(
         @NonNull ContextMenu menu, @NonNull View v, ContextMenuInfo menuInfo) {
-      super.onCreateContextMenu(menu, v, menuInfo);
       new MenuInflater(getActivity()).inflate(R.menu.notification_settings_menu, menu);
     }
 
