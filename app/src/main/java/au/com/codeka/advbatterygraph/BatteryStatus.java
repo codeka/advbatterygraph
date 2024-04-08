@@ -233,19 +233,20 @@ public class BatteryStatus {
      */
     @Override
     public void onCreate(SQLiteDatabase db) {
+      Log.i(TAG, "onCreate");
       db.execSQL("CREATE TABLE battery_history ("
           + "  timestamp INTEGER,"
-          + "  device INTEGER,"
-          + "  charge_percent REAL,"
-          + "  current_instant_milliamperes REAL,"
-          + "  current_avg_milliamperes REAL,"
-          + "  energy_milliwatthours REAL,"
-          + "  temperature REAL)");
-      db.execSQL("CREATE INDEX IX_device_timestamp ON battery_history (device, timestamp)");
+          + "  charge_percent REAL)");
+      db.execSQL("CREATE INDEX IX_timestamp ON battery_history (timestamp)");
+
+      // We call onUpgrade so we don't need to support two paths, a "create" and "upgrade",
+      // essentially, everything is an upgrade.
+      onUpgrade(db, 0, 8);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+      Log.i(TAG, "onUpgrade oldVersion=" + oldVersion + ", newVersion=" + newVersion);
       if (oldVersion <= 1) {
         db.execSQL("ALTER TABLE battery_history ADD COLUMN temperature REAL");
       }
@@ -253,7 +254,7 @@ public class BatteryStatus {
         db.execSQL("UPDATE battery_history SET temperature=25.0 WHERE temperature=0");
       }
       if (oldVersion <= 3) {
-        db.execSQL("ALTER TABLE battery_history ADD COLUMN device INT");
+        db.execSQL("ALTER TABLE battery_history ADD COLUMN device INTEGER");
         db.execSQL("UPDATE battery_history SET device=0");
         db.execSQL("DROP INDEX IX_timestamp");
         db.execSQL("CREATE INDEX IX_device_timestamp ON battery_history (device, timestamp)");

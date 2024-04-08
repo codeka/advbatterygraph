@@ -164,7 +164,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     // make sure the alarm is running
     AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
     Intent alarmIntent = new Intent(context, BatteryGraphAlarmReceiver.class);
-    PendingIntent pendingAlarmIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, PendingIntent.FLAG_IMMUTABLE);
+    PendingIntent pendingAlarmIntent = PendingIntent.getBroadcast(context, 0, alarmIntent, PendingIntent.FLAG_MUTABLE);
     alarmManager.setRepeating(AlarmManager.RTC_WAKEUP, System.currentTimeMillis(), 1000 * 60, pendingAlarmIntent);
 
     for (int appWidgetId : appWidgetIds) {
