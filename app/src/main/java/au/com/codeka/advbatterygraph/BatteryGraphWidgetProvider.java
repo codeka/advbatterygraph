@@ -737,12 +737,20 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     return (temp - min) / range;
   }
 
+  private static final float MAX_GAP_PX = 50f;
+
   private void drawGraphBackground(
       List<GraphPoint> points, Canvas canvas, int width, int zeroValue) {
     Path path = new Path();
     path.moveTo(width, zeroValue);
+    float lastX = width;
     for (GraphPoint pt : points) {
+      if (lastX - pt.x > MAX_GAP_PX) {
+        path.lineTo(lastX, zeroValue);
+        path.lineTo(pt.x, zeroValue);
+      }
       path.lineTo(pt.x, pt.y);
+      lastX = pt.x;
     }
     path.lineTo(0, zeroValue);
     path.lineTo(width, zeroValue);
@@ -761,6 +769,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     paint.setStrokeWidth(4.0f);
     Path path = null;
     int colour = Color.BLACK;
+    if (points.isEmpty()) {
+      return;
+    }
+
+    float lastX = points.get(0).x;
     for (GraphPoint pt : points) {
       if (pt.colour != colour || path == null) {
         if (path != null) {
@@ -772,7 +785,12 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
         path = new Path();
         path.moveTo(pt.x, pt.y);
       } else {
-        path.lineTo(pt.x, pt.y);
+        if (lastX - pt.x > MAX_GAP_PX) {
+          path.moveTo(pt.x, pt.y);
+        } else {
+          path.lineTo(pt.x, pt.y);
+        }
+        lastX = pt.x;
       }
     }
     if (path != null) {
