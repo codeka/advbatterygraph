@@ -87,7 +87,6 @@ public class BatteryGraphAlarmReceiver extends BroadcastReceiver {
               .chargeFraction((float)((int) deviceLevel) / 100.0f)
               .build();
           BatteryStatus.save(context, status);
-          Log.i("DEANH", String.format("device %d (%s) %d", id, device.getName(), (int) deviceLevel));
         } catch (Exception e) {
           Log.i(TAG, "error getting battery level: " + e);
         }

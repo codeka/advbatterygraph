@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8" ?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    android:versionCode="145"
-          android:versionName="1.4.5">
+    android:versionCode="150"
+          android:versionName="1.5.0">
 
   <!-- required because we use an alarm to query the battery state. -->
   <uses-permission android:name="android.permission.WAKE_LOCK" />
