@@ -47,6 +47,10 @@ import android.widget.RemoteViews;
 public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   private static final String TAG = "BatteryGraphWidget";
 
+  // If there are gaps in the graph that are bigger than this, don't render a line, just draw the
+  // gap.
+  private static final float MAX_GAP_PX = 50f;
+
   // The status message on the bottom-right of the graph contains a mixture of text and icons, so
   // we represent it using an array of StatusMessageEntry objects.
   private static class StatusMessageEntry {
@@ -736,8 +740,6 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
 
     return (temp - min) / range;
   }
-
-  private static final float MAX_GAP_PX = 50f;
 
   private void drawGraphBackground(
       List<GraphPoint> points, Canvas canvas, int width, int zeroValue) {
