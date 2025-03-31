@@ -754,7 +754,11 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       path.lineTo(pt.x, pt.y);
       lastX = pt.x;
     }
-    path.lineTo(0, zeroValue);
+    if (lastX < MAX_GAP_PX) {
+      path.lineTo(0, zeroValue);
+    } else {
+      path.lineTo(lastX, zeroValue);
+    }
     path.lineTo(width, zeroValue);
     Paint paint = new Paint();
     paint.setAntiAlias(true);
