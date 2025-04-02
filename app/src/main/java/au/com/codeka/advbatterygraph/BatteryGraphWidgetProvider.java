@@ -744,14 +744,19 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
   private void drawGraphBackground(
       List<GraphPoint> points, Canvas canvas, int width, int zeroValue) {
     Path path = new Path();
-    path.moveTo(width, zeroValue);
+    boolean first = true;
     float lastX = width;
     for (GraphPoint pt : points) {
-      if (lastX - pt.x > MAX_GAP_PX) {
-        path.lineTo(lastX, zeroValue);
-        path.lineTo(pt.x, zeroValue);
+      if (first) {
+        path.moveTo(pt.x, pt.y);
+      } else {
+        if (lastX - pt.x > MAX_GAP_PX) {
+          path.lineTo(lastX, zeroValue);
+          path.lineTo(pt.x, zeroValue);
+        }
+        path.lineTo(pt.x, pt.y);
       }
-      path.lineTo(pt.x, pt.y);
+      first = false;
       lastX = pt.x;
     }
     if (lastX < MAX_GAP_PX) {
