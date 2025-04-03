@@ -378,7 +378,7 @@ public class BatteryStatus {
             "device = " + device + " AND timestamp >= " + minTimestamp,
             null, null, null, "timestamp DESC");
 
-        ArrayList<BatteryStatus> statuses = new ArrayList<BatteryStatus>();
+        ArrayList<BatteryStatus> statuses = new ArrayList<>();
         while (cursor.moveToNext()) {
           statuses.add(new BatteryStatus.Builder(device)
               .timestamp(cursor.getLong(0))

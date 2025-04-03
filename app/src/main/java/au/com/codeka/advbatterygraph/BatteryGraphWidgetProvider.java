@@ -28,16 +28,11 @@ import android.graphics.Paint.Style;
 import android.graphics.Path;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
-import android.graphics.text.MeasuredText;
 import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.core.app.ActivityCompat;
-import androidx.preference.CheckBoxPreference;
 
-import android.text.Spannable;
-import android.text.SpannableString;
-import android.text.SpannableStringBuilder;
 import android.util.Log;
 import android.widget.RemoteViews;
 
@@ -186,7 +181,8 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     }
   }
 
-  private HashMap<Integer, List<BatteryStatus>> getBluetoothDeviceBatteryHistory(Context context, Settings.GraphSettings graphSettings) {
+  private HashMap<Integer, List<BatteryStatus>> getBluetoothDeviceBatteryHistory(
+          Context context, Settings.GraphSettings graphSettings) {
     HashMap<Integer, List<BatteryStatus>> history = new HashMap<>();
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S &&
         ActivityCompat.checkSelfPermission(
@@ -196,10 +192,10 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
       return history;
     }
 
-
     HashMap<String, Integer> knownDevices = BatteryStatus.getBluetoothDeviceIds(context);
     for (BluetoothDevice device : BluetoothAdapter.getDefaultAdapter().getBondedDevices()) {
-      Settings.BluetoothDeviceSettings deviceSettings = graphSettings.getBluetoothDeviceSettings(device.getName());
+      Settings.BluetoothDeviceSettings deviceSettings =
+              graphSettings.getBluetoothDeviceSettings(device.getName());
       if (deviceSettings != null && deviceSettings.showGraph()) {
         Integer id = knownDevices.get(device.getName());
         if (id == null) {
@@ -532,28 +528,19 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     Calendar cal = Calendar.getInstance();
     cal.setTime(new Date());
 
-    BatteryStatus status = history.get(0);
-    float y = 2 + height - (height * status.getChargeFraction());
-    if (y < 0) {
-      y = 0;
-    }
-    if (y >= height) {
-      y = height - 1;
-    }
-    points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction(), baseColour)));
-    for (int minute = 1, j = 1; minute < numMinutes; minute++) {
-      x -= pixelsPerMinute;
-      cal.add(Calendar.MINUTE, -1);
+    for (int minute = 0, j = 0; minute < numMinutes; minute++) {
       Date dt = cal.getTime();
-
       while (j < history.size() - 1 && history.get(j).getDate().after(dt)) {
         j++;
       }
-      status = history.get(j);
-      y = 2 + height - (height * status.getChargeFraction());
+      BatteryStatus status = history.get(j);
+      float y = 2 + height - (height * status.getChargeFraction());
       if (y > 0 && y < height) {
         points.add(new GraphPoint(x, y, getColourForCharge(status.getChargeFraction(), baseColour)));
       }
+
+      x -= pixelsPerMinute;
+      cal.add(Calendar.MINUTE, -1);
     }
 
     return points;
@@ -748,14 +735,14 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     float lastX = width;
     for (GraphPoint pt : points) {
       if (first) {
-        path.moveTo(pt.x, pt.y);
+        path.moveTo(pt.x, zeroValue);
       } else {
         if (lastX - pt.x > MAX_GAP_PX) {
           path.lineTo(lastX, zeroValue);
           path.lineTo(pt.x, zeroValue);
         }
-        path.lineTo(pt.x, pt.y);
       }
+      path.lineTo(pt.x, pt.y);
       first = false;
       lastX = pt.x;
     }
@@ -764,6 +751,7 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     } else {
       path.lineTo(lastX, zeroValue);
     }
+
     path.lineTo(width, zeroValue);
     Paint paint = new Paint();
     paint.setAntiAlias(true);
@@ -779,35 +767,34 @@ public class BatteryGraphWidgetProvider extends AppWidgetProvider {
     paint.setAlpha(255);
     paint.setStrokeWidth(4.0f);
     Path path = null;
-    int colour = Color.BLACK;
     if (points.isEmpty()) {
       return;
     }
 
     float lastX = points.get(0).x;
+    int colour = points.get(0).colour;
     for (GraphPoint pt : points) {
-      if (pt.colour != colour || path == null) {
+      if (lastX - pt.x <=  MAX_GAP_PX && (pt.colour != colour || path == null)) {
         if (path != null) {
           path.lineTo(pt.x, pt.y);
           paint.setColor(colour);
           canvas.drawPath(path, paint);
-          colour = pt.colour;
         }
         path = new Path();
         path.moveTo(pt.x, pt.y);
-      } else {
+        colour = pt.colour;
+      } else if (path != null) {
         if (lastX - pt.x > MAX_GAP_PX) {
           path.moveTo(pt.x, pt.y);
         } else {
           path.lineTo(pt.x, pt.y);
         }
-        lastX = pt.x;
       }
+      lastX = pt.x;
     }
-    if (path != null) {
-      paint.setColor(colour);
-      canvas.drawPath(path, paint);
-    }
+
+    paint.setColor(colour);
+    canvas.drawPath(path, paint);
   }
 
   private void drawHorizontalLine(List<GraphPoint> points, Canvas canvas) {
